@@ -245,6 +245,9 @@ form {
 .field input[type="text"],
 .field input[type="email"],
 .field input[type="password"],
+.field input[type="number"],
+.field input[type="date"],
+.field textarea,
 .field select {
   padding: 0.55rem 0.7rem;
   border: 1px solid #d1d5db;
@@ -252,9 +255,16 @@ form {
   font-size: 0.88rem;
   background: #fff;
   transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field textarea {
+  resize: vertical;
 }
 
 .field input:focus,
+.field textarea:focus,
 .field select:focus {
   outline: none;
   border-color: #2d6a9f;

@@ -124,10 +124,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="page">
+  <div>
     <div class="page-header">
       <h1>Flota de Vehículos</h1>
-      <button class="btn btn-primary" @click="openCreate">+ Nuevo Vehículo</button>
+      <button class="btn btn--primary" @click="openCreate">+ Nuevo Vehículo</button>
     </div>
 
     <!-- Alertas de documentos próximos a vencer -->
@@ -152,15 +152,22 @@ onMounted(async () => {
 
     <!-- Tabla -->
     <div class="card">
-      <div v-if="store.loading" class="loading">Cargando…</div>
+      <div v-if="store.loading" class="loading-text">Cargando…</div>
+
       <table v-else class="data-table">
         <thead>
           <tr>
-            <th>Placa</th><th>Marca / Modelo</th><th>Tipo</th>
-            <th>Estado</th><th>Acciones</th>
+            <th>Placa</th>
+            <th>Marca / Modelo</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
+          <tr v-if="!store.vehicles.length">
+            <td colspan="5" class="empty-row">Sin registros</td>
+          </tr>
           <tr v-for="v in store.vehicles" :key="v.id">
             <td><strong>{{ v.plate }}</strong></td>
             <td>{{ v.brand }} {{ v.model }} ({{ v.year }})</td>
@@ -171,10 +178,10 @@ onMounted(async () => {
               </span>
             </td>
             <td class="actions">
-              <button class="btn btn-sm btn-secondary" @click="openEdit(v)">Editar</button>
+              <button class="btn btn--sm btn--outline" @click="openEdit(v)">Editar</button>
               <select
                 v-if="nextStatuses(v.status).length"
-                class="btn btn-sm"
+                class="status-select"
                 @change="e => { changeStatus(v, e.target.value); e.target.value = '' }"
               >
                 <option value="">→ Estado</option>
@@ -182,102 +189,93 @@ onMounted(async () => {
                   {{ STATUS_LABELS[s] }}
                 </option>
               </select>
-              <button class="btn btn-sm btn-danger" @click="remove(v)">Eliminar</button>
+              <button class="btn btn--sm btn--danger" @click="remove(v)">Eliminar</button>
             </td>
-          </tr>
-          <tr v-if="!store.vehicles.length">
-            <td colspan="5" class="empty">No hay vehículos registrados</td>
           </tr>
         </tbody>
       </table>
 
-      <!-- Paginación -->
       <div v-if="store.meta?.last_page > 1" class="pagination">
-        <button
-          v-for="p in store.meta.last_page" :key="p"
-          class="btn btn-sm"
-          :class="{ 'btn-primary': p === store.meta.current_page }"
-          @click="store.fetchVehicles(p)"
-        >{{ p }}</button>
+        <button :disabled="store.meta.current_page === 1" @click="store.fetchVehicles(store.meta.current_page - 1)">‹</button>
+        <span>{{ store.meta.current_page }} / {{ store.meta.last_page }}</span>
+        <button :disabled="store.meta.current_page === store.meta.last_page" @click="store.fetchVehicles(store.meta.current_page + 1)">›</button>
       </div>
     </div>
 
     <!-- Modal -->
-    <Teleport to="body">
-      <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>{{ editMode ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h2>
-            <button class="close-btn" @click="showModal = false">✕</button>
-          </div>
-          <div class="modal-body">
-            <p v-if="error" class="form-error">{{ error }}</p>
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Placa *</label>
-                <input v-model="form.plate" placeholder="ABC-123" />
-              </div>
-              <div class="form-group">
-                <label>Marca *</label>
-                <input v-model="form.brand" placeholder="Toyota" />
-              </div>
-              <div class="form-group">
-                <label>Modelo *</label>
-                <input v-model="form.model" placeholder="Hilux" />
-              </div>
-              <div class="form-group">
-                <label>Año *</label>
-                <input v-model="form.year" type="number" placeholder="2023" />
-              </div>
-              <div class="form-group">
-                <label>Tipo *</label>
-                <select v-model="form.type">
-                  <option value="">Seleccionar</option>
-                  <option v-for="t in TYPES" :key="t" :value="t">{{ t }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Combustible *</label>
-                <select v-model="form.fuel_type">
-                  <option value="">Seleccionar</option>
-                  <option v-for="f in FUEL_TYPES" :key="f" :value="f">{{ f }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Color</label>
-                <input v-model="form.color" placeholder="Blanco" />
-              </div>
-              <div class="form-group">
-                <label>Capacidad (kg)</label>
-                <input v-model="form.capacity" type="number" placeholder="1500" />
-              </div>
-              <div class="form-group">
-                <label>Venc. Seguro</label>
-                <input v-model="form.insurance_expiry" type="date" />
-              </div>
-              <div class="form-group">
-                <label>Venc. Rev. Técnica</label>
-                <input v-model="form.technical_review_expiry" type="date" />
-              </div>
-              <div class="form-group">
-                <label>Venc. Permiso Circ.</label>
-                <input v-model="form.circulation_permit_expiry" type="date" />
-              </div>
-              <div class="form-group form-group-full">
-                <label>Notas</label>
-                <textarea v-model="form.notes" rows="2"></textarea>
-              </div>
+    <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>{{ editMode ? 'Editar Vehículo' : 'Nuevo Vehículo' }}</h3>
+          <button class="modal-close" @click="showModal = false">✕</button>
+        </div>
+        <form @submit.prevent="save">
+          <div v-if="error" class="alert alert--error">{{ error }}</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Placa *</label>
+              <input v-model="form.plate" type="text" required />
+            </div>
+            <div class="field">
+              <label>Marca *</label>
+              <input v-model="form.brand" type="text" required />
+            </div>
+            <div class="field">
+              <label>Modelo *</label>
+              <input v-model="form.model" type="text" required />
+            </div>
+            <div class="field">
+              <label>Año *</label>
+              <input v-model="form.year" type="number" required />
+            </div>
+            <div class="field">
+              <label>Tipo *</label>
+              <select v-model="form.type" required>
+                <option value="">— Seleccionar —</option>
+                <option v-for="t in TYPES" :key="t" :value="t">{{ t }}</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Combustible *</label>
+              <select v-model="form.fuel_type" required>
+                <option value="">— Seleccionar —</option>
+                <option v-for="f in FUEL_TYPES" :key="f" :value="f">{{ f }}</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Color</label>
+              <input v-model="form.color" type="text" />
+            </div>
+            <div class="field">
+              <label>Capacidad (kg)</label>
+              <input v-model="form.capacity" type="number" />
+            </div>
+            <div class="field">
+              <label>Venc. Seguro</label>
+              <input v-model="form.insurance_expiry" type="date" />
+            </div>
+            <div class="field">
+              <label>Venc. Rev. Técnica</label>
+              <input v-model="form.technical_review_expiry" type="date" />
+            </div>
+            <div class="field">
+              <label>Venc. Permiso Circ.</label>
+              <input v-model="form.circulation_permit_expiry" type="date" />
+            </div>
+            <div class="field field--full">
+              <label>Notas</label>
+              <input v-model="form.notes" type="text" />
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" @click="showModal = false">Cancelar</button>
-            <button class="btn btn-primary" :disabled="saving" @click="save">
+            <button type="button" class="btn btn--outline" @click="showModal = false">Cancelar</button>
+            <button type="submit" class="btn btn--primary" :disabled="saving">
               {{ saving ? 'Guardando…' : 'Guardar' }}
             </button>
           </div>
-        </div>
+        </form>
       </div>
-    </Teleport>
+    </div>
   </div>
 </template>
 
@@ -301,12 +299,22 @@ onMounted(async () => {
   border-radius: 4px;
   padding: 0.2rem 0.5rem;
 }
-.filters { display: flex; gap: 1rem; margin-bottom: 1rem; padding: 0.75rem 1rem; }
-.filters select { padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; }
-.actions { display: flex; gap: 0.5rem; align-items: center; }
-.empty { text-align: center; color: #6b7280; padding: 2rem; }
-.pagination { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: center; }
-.loading { text-align: center; padding: 2rem; color: #6b7280; }
-.form-error { color: #dc2626; font-size: 0.875rem; margin-bottom: 0.5rem; }
-.form-group-full { grid-column: 1 / -1; }
+.filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+}
+.filters select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+.status-select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
 </style>
