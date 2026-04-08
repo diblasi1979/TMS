@@ -10,7 +10,7 @@ export const useRoutesStore = defineStore('routes', () => {
   const routes  = ref([])
   const meta    = ref({})
   const loading = ref(false)
-  const filters = reactive({ status: '', planned_date: '', vehicle_id: '' })
+  const filters = reactive({ status: '', planned_date: '', vehicle_id: '', trip_plan_id: '' })
 
   async function fetchRoutes(page = 1) {
     loading.value = true

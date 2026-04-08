@@ -4,6 +4,7 @@ import { useRoutesStore } from '@/stores/routes.js'
 import { getOrders } from '@/api/orders.js'
 import { getVehicles } from '@/api/vehicles.js'
 import { getOperators } from '@/api/operators.js'
+import { getTrips } from '@/api/trips.js'
 
 const store = useRoutesStore()
 const showModal     = ref(false)
@@ -16,6 +17,7 @@ const selectedRoute = ref(null)
 const pendingOrders = ref([])
 const vehicles      = ref([])
 const operators     = ref([])
+const availableTrips = ref([])
 
 const STATUSES = ['draft', 'planned', 'in_transit', 'completed', 'cancelled']
 const STATUS_LABELS = {
@@ -35,6 +37,7 @@ const STATUS_COLORS = {
 
 const form = reactive({
   id: null, name: '', planned_date: '',
+  trip_plan_id: '',
   vehicle_id: '', operator_id: '',
   total_distance_km: '', notes: '',
 })
@@ -42,6 +45,7 @@ const form = reactive({
 function resetForm() {
   Object.assign(form, {
     id: null, name: '', planned_date: '',
+    trip_plan_id: '',
     vehicle_id: '', operator_id: '',
     total_distance_km: '', notes: '',
   })
@@ -59,6 +63,7 @@ function openEdit(route) {
     id: route.id,
     name: route.name ?? '',
     planned_date: route.planned_date ?? '',
+    trip_plan_id: route.trip_plan_id ?? '',
     vehicle_id: route.vehicle_id ?? '',
     operator_id: route.operator_id ?? '',
     total_distance_km: route.total_distance_km ?? '',
@@ -83,6 +88,8 @@ function buildPayload() {
   else raw.vehicle_id = null
   if (raw.operator_id !== '') raw.operator_id = parseInt(raw.operator_id)
   else raw.operator_id = null
+  if (raw.trip_plan_id !== '') raw.trip_plan_id = parseInt(raw.trip_plan_id)
+  else raw.trip_plan_id = null
   if (raw.total_distance_km !== '') raw.total_distance_km = parseFloat(raw.total_distance_km)
   else raw.total_distance_km = null
   return raw
@@ -160,12 +167,14 @@ function applyFilters() {
 
 onMounted(async () => {
   await store.fetchRoutes()
-  const [vo, oo] = await Promise.all([
+  const [vo, oo, to] = await Promise.all([
     getVehicles({ status: 'available' }),
     getOperators({ status: 'available' }),
+    getTrips({ status: 'confirmed,draft', per_page: 100 }),
   ])
-  vehicles.value  = vo.data.data ?? []
-  operators.value = oo.data.data ?? []
+  vehicles.value      = vo.data.data ?? []
+  operators.value     = oo.data.data ?? []
+  availableTrips.value = to.data.data ?? []
 })
 </script>
 
@@ -183,6 +192,12 @@ onMounted(async () => {
         <option v-for="s in STATUSES" :key="s" :value="s">{{ STATUS_LABELS[s] }}</option>
       </select>
       <input v-model="store.filters.planned_date" type="date" @change="applyFilters" title="Filtrar por fecha planificada" />
+      <select v-model="store.filters.trip_plan_id" @change="applyFilters">
+        <option value="">Todos los viajes</option>
+        <option v-for="t in availableTrips" :key="t.id" :value="t.id">
+          {{ t.trip_number }} — {{ t.origin }} → {{ t.destination }}
+        </option>
+      </select>
     </div>
 
     <!-- Tabla -->
@@ -192,6 +207,7 @@ onMounted(async () => {
         <thead>
           <tr>
             <th>Nombre</th>
+            <th>Viaje</th>
             <th>Fecha planificada</th>
             <th>Vehículo</th>
             <th>Operador</th>
@@ -202,10 +218,16 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-if="!store.routes.length">
-            <td colspan="7" class="empty-row">Sin rutas registradas</td>
+            <td colspan="8" class="empty-row">Sin rutas registradas</td>
           </tr>
           <tr v-for="route in store.routes" :key="route.id">
             <td><strong>{{ route.name }}</strong></td>
+            <td>
+              <span v-if="route.trip_plan" class="trip-badge" :title="route.trip_plan.origin + ' → ' + route.trip_plan.destination">
+                🗓️ {{ route.trip_plan.trip_number }}
+              </span>
+              <span v-else class="text-muted">—</span>
+            </td>
             <td>{{ route.planned_date }}</td>
             <td>{{ route.vehicle?.plate ?? '—' }}</td>
             <td>{{ route.operator?.name ?? '—' }}</td>
@@ -270,6 +292,15 @@ onMounted(async () => {
           <div v-if="error" class="alert alert--error">{{ error }}</div>
           <div class="form-grid">
             <div class="field field--full">
+              <label>Viaje Planificado</label>
+              <select v-model="form.trip_plan_id">
+                <option value="">— Sin asociar a viaje —</option>
+                <option v-for="t in availableTrips" :key="t.id" :value="t.id">
+                  {{ t.trip_number }} — {{ t.origin }} → {{ t.destination }}
+                </option>
+              </select>
+            </div>
+            <div class="field field--full">
               <label>Nombre de la ruta *</label>
               <input v-model="form.name" type="text" required />
             </div>
@@ -329,6 +360,10 @@ onMounted(async () => {
                 {{ STATUS_LABELS[selectedRoute.status] }}
               </span>
             </span>
+            <span v-if="selectedRoute.trip_plan">
+              <strong>Viaje:</strong> 🗓️ {{ selectedRoute.trip_plan.trip_number }}
+              ({{ selectedRoute.trip_plan.origin }} → {{ selectedRoute.trip_plan.destination }})
+            </span>
             <span v-if="selectedRoute.vehicle"><strong>Vehículo:</strong> {{ selectedRoute.vehicle.plate }}</span>
             <span v-if="selectedRoute.operator"><strong>Operador:</strong> {{ selectedRoute.operator.name }}</span>
           </div>
@@ -375,4 +410,12 @@ onMounted(async () => {
   display: flex; flex-wrap: wrap; gap: 1.5rem;
   margin-bottom: 1.25rem; font-size: 0.9rem;
 }
+.trip-badge {
+  display: inline-block;
+  background: #ede9fe; color: #5b21b6;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+  font-size: 0.8rem; font-weight: 500;
+  white-space: nowrap;
+}
+.text-muted { color: #9ca3af; }
 </style>

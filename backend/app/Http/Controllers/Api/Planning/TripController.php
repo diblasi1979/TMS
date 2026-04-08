@@ -22,6 +22,7 @@ class TripController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = TripPlan::with(['client', 'vehicle', 'operator'])
+            ->withCount('routes')
             ->where('company_id', Auth::user()->company_id);
 
         if ($request->filled('status')) {
@@ -58,7 +59,7 @@ class TripController extends Controller
 
     public function show(TripPlan $trip): TripResource
     {
-        return new TripResource($trip->load(['client', 'vehicle', 'operator']));
+        return new TripResource($trip->load(['client', 'vehicle', 'operator', 'routes']));
     }
 
     public function update(UpdateTripRequest $request, TripPlan $trip): JsonResponse

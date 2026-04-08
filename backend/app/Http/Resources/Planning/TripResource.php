@@ -49,6 +49,16 @@ class TripResource extends JsonResource
             'status'              => $this->status,
             'priority'            => $this->priority,
             'notes'               => $this->notes,
+            'routes_count'        => $this->whenCounted('routes'),
+            'routes'              => $this->whenLoaded('routes', fn () =>
+                $this->routes->map(fn ($r) => [
+                    'id'          => $r->id,
+                    'name'        => $r->name,
+                    'planned_date'=> $r->planned_date?->toDateString(),
+                    'status'      => $r->status,
+                    'orders_count'=> $r->orders_count ?? null,
+                ])
+            ),
             'created_at'          => $this->created_at?->toISOString(),
             'updated_at'          => $this->updated_at?->toISOString(),
         ];

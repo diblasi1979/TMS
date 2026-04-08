@@ -1,14 +1,17 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useTripsStore } from '@/stores/trips.js'
+import { getTrip } from '@/api/trips.js'
 
 const store    = useTripsStore()
 const showModal    = ref(false)
 const confirmModal = ref(false)
+const routesModal  = ref(false)
 const editMode     = ref(false)
 const saving       = ref(false)
 const error        = ref('')
 const confirmTarget = ref(null)
+const tripDetail    = ref(null)
 
 const STATUSES = ['draft', 'confirmed', 'in_progress', 'completed', 'cancelled']
 const STATUS_LABELS = {
@@ -91,6 +94,12 @@ function openConfirm(trip) {
   Object.assign(confirmForm, { vehicle_id: trip.vehicle_id ?? '', operator_id: trip.operator_id ?? '' })
   error.value      = ''
   confirmModal.value = true
+}
+
+async function openRoutes(trip) {
+  const { data } = await getTrip(trip.id)
+  tripDetail.value  = data.data ?? data
+  routesModal.value = true
 }
 
 function buildPayload() {
@@ -223,6 +232,7 @@ onMounted(() => store.fetchTrips())
             <th>Salida planificada</th>
             <th>Vehículo</th>
             <th>Operador</th>
+            <th>Rutas</th>
             <th>Prioridad</th>
             <th>Estado</th>
             <th>Acciones</th>
@@ -230,7 +240,7 @@ onMounted(() => store.fetchTrips())
         </thead>
         <tbody>
           <tr v-if="!store.trips.length">
-            <td colspan="8" class="empty-row">Sin viajes registrados</td>
+            <td colspan="9" class="empty-row">Sin viajes registrados</td>
           </tr>
           <tr v-for="trip in store.trips" :key="trip.id">
             <td><strong>{{ trip.trip_number }}</strong></td>
@@ -238,6 +248,14 @@ onMounted(() => store.fetchTrips())
             <td>{{ trip.scheduled_departure ? trip.scheduled_departure.substring(0, 16).replace('T', ' ') : '—' }}</td>
             <td>{{ trip.vehicle?.plate ?? '—' }}</td>
             <td>{{ trip.operator?.name ?? '—' }}</td>
+            <td>
+              <button
+                v-if="trip.routes_count > 0"
+                class="btn btn--sm btn--outline"
+                @click="openRoutes(trip)"
+              >📆 {{ trip.routes_count }}</button>
+              <span v-else class="text-muted">0</span>
+            </td>
             <td>{{ PRIORITY_LABELS[trip.priority] ?? trip.priority }}</td>
             <td>
               <span class="badge" :style="{ background: STATUS_COLORS[trip.status] }">
@@ -286,6 +304,42 @@ onMounted(() => store.fetchTrips())
         <span>{{ store.meta.current_page }} / {{ store.meta.last_page }}</span>
         <button :disabled="store.meta.current_page === store.meta.last_page"
                 @click="store.fetchTrips(store.meta.current_page + 1)">›</button>
+      </div>
+    </div>
+
+    <!-- Modal Rutas del viaje -->
+    <div v-if="routesModal && tripDetail" class="modal-backdrop" @click.self="routesModal = false">
+      <div class="modal modal--wide">
+        <div class="modal-header">
+          <h3>Rutas del viaje {{ tripDetail.trip_number }}</h3>
+          <button class="modal-close" @click="routesModal = false">✕</button>
+        </div>
+        <p class="trip-detail-meta">
+          {{ tripDetail.origin }} → {{ tripDetail.destination }}
+          &nbsp;•&nbsp; Salida: {{ tripDetail.scheduled_departure?.substring(0, 16).replace('T', ' ') }}
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nombre de ruta</th>
+              <th>Fecha planificada</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!tripDetail.routes?.length">
+              <td colspan="3" class="empty-row">Sin rutas asignadas a este viaje</td>
+            </tr>
+            <tr v-for="r in tripDetail.routes" :key="r.id">
+              <td>{{ r.name }}</td>
+              <td>{{ r.planned_date }}</td>
+              <td>{{ r.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="modal-footer">
+          <button class="btn btn--outline" @click="routesModal = false">Cerrar</button>
+        </div>
       </div>
     </div>
 
@@ -389,3 +443,12 @@ onMounted(() => store.fetchTrips())
     </div>
   </div>
 </template>
+
+<style scoped>
+@import '@/assets/admin.css';
+.filters { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; padding: 0.75rem 1rem; }
+.filters select, .filters input { padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; }
+.modal--wide { max-width: 860px; width: 95%; }
+.trip-detail-meta { padding: 0 0 1rem; color: #6b7280; font-size: 0.9rem; }
+.text-muted { color: #9ca3af; font-size: 0.85rem; }
+</style>

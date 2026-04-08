@@ -22,7 +22,7 @@ class RouteController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = DeliveryRoute::withCount('orders')
-            ->with(['vehicle', 'operator'])
+            ->with(['vehicle', 'operator', 'tripPlan'])
             ->where('company_id', Auth::user()->company_id);
 
         if ($request->filled('status')) {
@@ -33,6 +33,9 @@ class RouteController extends Controller
         }
         if ($request->filled('vehicle_id')) {
             $query->where('vehicle_id', $request->vehicle_id);
+        }
+        if ($request->filled('trip_plan_id')) {
+            $query->where('trip_plan_id', $request->trip_plan_id);
         }
 
         return RouteResource::collection($query->latest()->paginate(20));
@@ -53,7 +56,7 @@ class RouteController extends Controller
 
     public function show(DeliveryRoute $route): RouteResource
     {
-        return new RouteResource($route->load(['vehicle', 'operator', 'orders.client']));
+        return new RouteResource($route->load(['vehicle', 'operator', 'tripPlan', 'orders.client']));
     }
 
     public function update(UpdateRouteRequest $request, DeliveryRoute $route): JsonResponse

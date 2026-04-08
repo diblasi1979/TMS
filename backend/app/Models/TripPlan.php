@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TripPlan extends Model
 {
@@ -77,6 +78,11 @@ class TripPlan extends Model
     public function operator(): BelongsTo
     {
         return $this->belongsTo(Operator::class);
+    }
+
+    public function routes(): HasMany
+    {
+        return $this->hasMany(DeliveryRoute::class);
     }
 
     public function isDraft(): bool

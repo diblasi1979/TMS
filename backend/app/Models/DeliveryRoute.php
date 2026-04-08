@@ -19,6 +19,7 @@ class DeliveryRoute extends Model
         'vehicle_id',
         'operator_id',
         'assignment_id',
+        'trip_plan_id',
         'planned_date',
         'dispatched_at',
         'completed_at',
@@ -55,6 +56,11 @@ class DeliveryRoute extends Model
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(VehicleAssignment::class, 'assignment_id');
+    }
+
+    public function tripPlan(): BelongsTo
+    {
+        return $this->belongsTo(TripPlan::class);
     }
 
     public function orders(): HasMany
