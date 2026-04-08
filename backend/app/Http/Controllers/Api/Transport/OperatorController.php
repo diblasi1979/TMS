@@ -29,7 +29,7 @@ class OperatorController extends Controller
         $operator = Operator::create($request->validated());
 
         return response()->json(
-            new OperatorResource($operator->load('company')),
+            new OperatorResource($operator->refresh()->load('company')),
             201
         );
     }

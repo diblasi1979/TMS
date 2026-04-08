@@ -15,6 +15,11 @@ class Operator extends Model
     public const LICENSE_TYPES = ['A1', 'A2', 'B', 'C', 'D', 'E'];
     public const STATUSES      = ['available', 'on_duty', 'off_duty', 'inactive'];
 
+    protected $attributes = [
+        'status'    => 'available',
+        'is_active' => true,
+    ];
+
     protected $fillable = [
         'company_id',
         'name',
