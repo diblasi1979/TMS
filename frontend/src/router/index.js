@@ -33,6 +33,14 @@ const routes = [
           { path: 'assignments', name: 'assignments', component: () => import('@/pages/transport/Assignments.vue') },
         ],
       },
+      {
+        path: 'distribution',
+        meta: { requiresAdmin: true },
+        children: [
+          { path: 'orders', name: 'orders', component: () => import('@/pages/distribution/Orders.vue') },
+          { path: 'routes', name: 'routes', component: () => import('@/pages/distribution/Routes.vue') },
+        ],
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },

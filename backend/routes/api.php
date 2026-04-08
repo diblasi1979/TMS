@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\Transport\AlertController;
 use App\Http\Controllers\Api\Transport\AssignmentController;
 use App\Http\Controllers\Api\Transport\OperatorController;
 use App\Http\Controllers\Api\Transport\VehicleController;
+use App\Http\Controllers\Api\Distribution\OrderController;
+use App\Http\Controllers\Api\Distribution\RouteController;
+use App\Http\Controllers\Api\Distribution\EventController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -58,6 +61,34 @@ Route::middleware('auth.session')->group(function () {
             Route::get('assignments',                      [AssignmentController::class, 'index'])->name('assignments.index');
             Route::post('assignments',                     [AssignmentController::class, 'store'])->name('assignments.store');
             Route::patch('assignments/{assignment}/release', [AssignmentController::class, 'release'])->name('assignments.release');
+        });
+
+        // ── Módulo Distribución ─────────────────────────────────────────
+        Route::prefix('distribution')->name('distribution.')->group(function () {
+
+            // Pedidos
+            Route::get('orders',              [OrderController::class, 'index'])->name('orders.index');
+            Route::post('orders',             [OrderController::class, 'store'])->name('orders.store');
+            Route::get('orders/{order}',      [OrderController::class, 'show'])->name('orders.show');
+            Route::put('orders/{order}',      [OrderController::class, 'update'])->name('orders.update');
+            Route::delete('orders/{order}',   [OrderController::class, 'destroy'])->name('orders.destroy');
+            Route::patch('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+
+            // Eventos de entrega
+            Route::get('orders/{order}/events',  [EventController::class, 'index'])->name('orders.events.index');
+            Route::post('orders/{order}/events', [EventController::class, 'store'])->name('orders.events.store');
+
+            // Rutas
+            Route::get('routes',                [RouteController::class, 'index'])->name('routes.index');
+            Route::post('routes',               [RouteController::class, 'store'])->name('routes.store');
+            Route::get('routes/{route}',        [RouteController::class, 'show'])->name('routes.show');
+            Route::put('routes/{route}',        [RouteController::class, 'update'])->name('routes.update');
+            Route::delete('routes/{route}',     [RouteController::class, 'destroy'])->name('routes.destroy');
+            Route::post('routes/{route}/orders',                      [RouteController::class, 'addOrder'])->name('routes.orders.add');
+            Route::delete('routes/{route}/orders/{order}',            [RouteController::class, 'removeOrder'])->name('routes.orders.remove');
+            Route::patch('routes/{route}/dispatch', [RouteController::class, 'dispatch'])->name('routes.dispatch');
+            Route::patch('routes/{route}/complete', [RouteController::class, 'complete'])->name('routes.complete');
+            Route::patch('routes/{route}/cancel',   [RouteController::class, 'cancel'])->name('routes.cancel');
         });
     });
 });
