@@ -10,8 +10,8 @@ const editMode  = ref(false)
 const saving    = ref(false)
 const error     = ref('')
 
-const TYPES      = ['sedan','suv','pickup','van','truck','trailer','bus','motorcycle','other']
-const FUEL_TYPES = ['gasoline','diesel','electric','hybrid','gas']
+const TYPES      = ['truck','van','pickup','semi','refrigerated','tanker','minibus']
+const FUEL_TYPES = ['diesel','gasoline','electric','gas']
 const STATUSES   = ['available','on_route','maintenance','inactive']
 
 const STATUS_LABELS = {
