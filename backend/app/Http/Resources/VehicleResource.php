@@ -33,10 +33,6 @@ class VehicleResource extends JsonResource
                 ? new VehicleAssignmentResource($this->activeAssignment)
                 : null
             ),
-            'expiring_documents'         => $this->when(
-                isset($this->resource->expiringDocuments),
-                fn () => $this->expiringDocuments()
-            ),
             'created_at'                 => $this->created_at?->toISOString(),
         ];
     }

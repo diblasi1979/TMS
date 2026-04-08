@@ -16,6 +16,12 @@ class Vehicle extends Model
     public const FUEL_TYPES = ['diesel', 'gasoline', 'electric', 'gas'];
     public const STATUSES = ['available', 'on_route', 'maintenance', 'inactive'];
 
+    protected $attributes = [
+        'status'          => 'available',
+        'current_mileage' => 0,
+        'is_active'       => true,
+    ];
+
     protected $fillable = [
         'company_id',
         'plate',

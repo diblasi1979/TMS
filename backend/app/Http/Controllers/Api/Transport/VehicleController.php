@@ -30,7 +30,7 @@ class VehicleController extends Controller
         $vehicle = Vehicle::create($request->validated());
 
         return response()->json(
-            new VehicleResource($vehicle->load('company')),
+            new VehicleResource($vehicle->refresh()->load('company')),
             201
         );
     }
