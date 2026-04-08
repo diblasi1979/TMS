@@ -21,6 +21,9 @@ const navItems = computed(() => {
       { type: 'link',  name: 'vehicles',    label: 'Flota',        icon: '🚛', to: { name: 'vehicles' },    indent: true },
       { type: 'link',  name: 'operators',   label: 'Operadores',   icon: '👷', to: { name: 'operators' },   indent: true },
       { type: 'link',  name: 'assignments', label: 'Asignaciones', icon: '🔗', to: { name: 'assignments' }, indent: true },
+      { type: 'group', label: 'Distribución' },
+      { type: 'group', label: 'Planificación' },
+      { type: 'group', label: 'Seguimiento' },
     )
   }
   return items
