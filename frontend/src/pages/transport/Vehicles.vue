@@ -30,7 +30,8 @@ const STATUS_COLORS = {
 
 const form = reactive({
   id: null, plate: '', brand: '', model: '', year: '',
-  type: '', fuel_type: '', color: '', capacity: '',
+  type: '', fuel_type: '', color: '', payload_kg: '',
+  volume_m3: '', current_mileage: '', is_active: true,
   insurance_expiry: '', technical_review_expiry: '',
   circulation_permit_expiry: '', notes: '', company_id: '',
 })
@@ -38,7 +39,8 @@ const form = reactive({
 function resetForm() {
   Object.assign(form, {
     id: null, plate: '', brand: '', model: '', year: '',
-    type: '', fuel_type: '', color: '', capacity: '',
+    type: '', fuel_type: '', color: '', payload_kg: '',
+    volume_m3: '', current_mileage: '', is_active: true,
     insurance_expiry: '', technical_review_expiry: '',
     circulation_permit_expiry: '', notes: '', company_id: '',
   })
@@ -55,7 +57,9 @@ function openEdit(v) {
   Object.assign(form, {
     id: v.id, plate: v.plate, brand: v.brand, model: v.model,
     year: v.year, type: v.type, fuel_type: v.fuel_type,
-    color: v.color ?? '', capacity: v.capacity ?? '',
+    color: v.color ?? '', payload_kg: v.payload_kg ?? '',
+    volume_m3: v.volume_m3 ?? '', current_mileage: v.current_mileage ?? '',
+    is_active: v.is_active ?? true,
     insurance_expiry: v.insurance_expiry ?? '',
     technical_review_expiry: v.technical_review_expiry ?? '',
     circulation_permit_expiry: v.circulation_permit_expiry ?? '',
@@ -247,8 +251,16 @@ onMounted(async () => {
               <input v-model="form.color" type="text" />
             </div>
             <div class="field">
-              <label>Capacidad (kg)</label>
-              <input v-model="form.capacity" type="number" />
+              <label>Capacidad carga (kg)</label>
+              <input v-model="form.payload_kg" type="number" min="0" />
+            </div>
+            <div class="field">
+              <label>Volumen (m³)</label>
+              <input v-model="form.volume_m3" type="number" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label>Kilometraje actual</label>
+              <input v-model="form.current_mileage" type="number" min="0" />
             </div>
             <div class="field">
               <label>Venc. Seguro</label>
@@ -265,6 +277,12 @@ onMounted(async () => {
             <div class="field field--full">
               <label>Notas</label>
               <input v-model="form.notes" type="text" />
+            </div>
+            <div class="field">
+              <label>
+                <input v-model="form.is_active" type="checkbox" />
+                Activo
+              </label>
             </div>
           </div>
           <div class="modal-footer">
