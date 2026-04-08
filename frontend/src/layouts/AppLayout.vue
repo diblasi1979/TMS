@@ -13,9 +13,10 @@ const navItems = computed(() => {
   ]
   if (auth.isAdmin) {
     items.push(
-      { type: 'link',  name: 'companies',   label: 'Empresas',     icon: '🏢', to: { name: 'companies' } },
-      { type: 'link',  name: 'users',       label: 'Usuarios',     icon: '👥', to: { name: 'users' } },
-      { type: 'link',  name: 'clients',     label: 'Clientes',     icon: '🤝', to: { name: 'clients' } },
+      { type: 'group', label: 'Administración' },
+      { type: 'link',  name: 'companies',   label: 'Empresas',     icon: '🏢', to: { name: 'companies' },   indent: true },
+      { type: 'link',  name: 'users',       label: 'Usuarios',     icon: '👥', to: { name: 'users' },       indent: true },
+      { type: 'link',  name: 'clients',     label: 'Clientes',     icon: '🤝', to: { name: 'clients' },     indent: true },
       { type: 'group', label: 'Transporte' },
       { type: 'link',  name: 'vehicles',    label: 'Flota',        icon: '🚛', to: { name: 'vehicles' },    indent: true },
       { type: 'link',  name: 'operators',   label: 'Operadores',   icon: '👷', to: { name: 'operators' },   indent: true },
