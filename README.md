@@ -12,7 +12,7 @@ TMS es una plataforma web diseñada para gestionar las operaciones logísticas d
 |--------|--------|-------------|
 | **Administración** | ✅ Implementado | Gestión de empresas, usuarios, clientes y roles |
 | **Transporte** | ✅ Implementado | Flota de vehículos, operadores y asignaciones |
-| **Distribución** | � En diseño | Gestión de rutas y puntos de entrega |
+| **Distribución** | ✅ Implementado | Pedidos de entrega, rutas de distribución y eventos |
 | **Planificación** | 🚧 En diseño | Programación de viajes y cargas |
 | **Seguimiento** | 🚧 En diseño | Trazabilidad en tiempo real |
 
@@ -78,6 +78,51 @@ Endpoint unificado que retorna:
 - Vehículos con documentos por vencer en ≤ 30 días (seguro, revisión técnica, permiso de circulación).
 - Operadores con licencia por vencer en ≤ 30 días.
 - Contador total de alertas.
+
+---
+
+## Módulo: Distribución (implementado)
+
+### Pedidos de Entrega (`/api/distribution/orders`)
+
+Gestiona el ciclo de vida de cada solicitud de entrega. Campos principales: cliente destinatario, número de referencia único, dirección y coordenadas de entrega, peso (kg), volumen (m³), fecha solicitada, contacto receptor.
+
+**Estados del pedido:**
+
+| Estado | Valor | Descripción |
+|--------|-------|-------------|
+| Pendiente | `pending` | Registrado, sin ruta asignada |
+| Programado | `scheduled` | Incluido en una ruta planificada |
+| En camino | `in_transit` | Ruta despachada, en tránsito |
+| Entregado | `delivered` | Entrega confirmada en destino |
+| Fallido | `failed` | No fue posible entregar |
+| Cancelado | `cancelled` | Cancelado antes del despacho |
+
+Un pedido `failed` puede reprogramarse volviendo a `pending`. Los pedidos en estado `in_transit` o `delivered` no pueden cancelarse ni modificarse.
+
+### Rutas de Distribución (`/api/distribution/routes`)
+
+Agrupa pedidos en un viaje secuenciado con vehículo y operador asignados.
+
+**Estados de la ruta:**
+
+| Estado | Valor | Descripción |
+|--------|-------|-------------|
+| Borrador | `draft` | Sin vehículo ni operador asignados |
+| Planificada | `planned` | Lista para despacho |
+| En camino | `in_transit` | Despachada, en ejecución |
+| Completada | `completed` | Todos los pedidos procesados |
+| Cancelada | `cancelled` | Cancelada antes del despacho |
+
+**Reglas de negocio:**
+- Al despachar: crea una `VehicleAssignment`, vehículo → `on_route`, operador → `on_duty`.
+- Al completar o cancelar: libera la `VehicleAssignment`, ambos regresan a `available`.
+- Verificación de capacidad (kg y m³) al agregar pedidos si el vehículo tiene límites definidos.
+- Al cancelar la ruta, los pedidos `scheduled` regresan a `pending`.
+
+### Eventos de Entrega (`/api/distribution/orders/{id}/events`)
+
+Registro histórico de acciones por parada: `arrived`, `delivered`, `failed`, `retry_scheduled`. Cada evento puede incluir coordenadas GPS y notas del operador. El estado del pedido se actualiza automáticamente según el tipo de evento registrado.
 
 ---
 
@@ -194,7 +239,7 @@ El sidebar de la aplicación está organizado en secciones agrupadas:
 |---------|-------------------|--------|
 | **Administración** | Empresas · Usuarios · Clientes | ✅ Activo |
 | **Transporte** | Flota · Operadores · Asignaciones | ✅ Activo |
-| **Distribución** | — | 🚧 En diseño |
+| **Distribución** | Pedidos · Rutas | ✅ Activo |
 | **Planificación** | — | 🚧 En diseño |
 | **Seguimiento** | — | 🚧 En diseño |
 
@@ -285,6 +330,34 @@ Authorization: Bearer <token>
 |--------|----------|-------------|
 | `GET` | `/api/transport/alerts` | Alertas unificadas de documentos y licencias |
 
+### Pedidos de Entrega (solo `admin`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/distribution/orders` | Listar (filtros: status, client_id, requested_date, route_id) |
+| `POST` | `/api/distribution/orders` | Crear pedido |
+| `GET` | `/api/distribution/orders/{id}` | Detalle con ruta y eventos |
+| `PUT` | `/api/distribution/orders/{id}` | Actualizar pedido |
+| `DELETE` | `/api/distribution/orders/{id}` | Eliminar (solo `pending` o `cancelled`) |
+| `PATCH` | `/api/distribution/orders/{id}/cancel` | Cancelar pedido |
+| `GET` | `/api/distribution/orders/{id}/events` | Historial de eventos |
+| `POST` | `/api/distribution/orders/{id}/events` | Registrar evento de entrega |
+
+### Rutas de Distribución (solo `admin`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/distribution/routes` | Listar (filtros: status, planned_date, vehicle_id) |
+| `POST` | `/api/distribution/routes` | Crear ruta en borrador |
+| `GET` | `/api/distribution/routes/{id}` | Detalle con pedidos y asignación |
+| `PUT` | `/api/distribution/routes/{id}` | Actualizar datos de la ruta |
+| `DELETE` | `/api/distribution/routes/{id}` | Eliminar (solo `draft`) |
+| `POST` | `/api/distribution/routes/{id}/orders` | Agregar pedido a la ruta |
+| `DELETE` | `/api/distribution/routes/{id}/orders/{orderId}` | Quitar pedido de la ruta |
+| `PATCH` | `/api/distribution/routes/{id}/dispatch` | Despachar ruta |
+| `PATCH` | `/api/distribution/routes/{id}/complete` | Cerrar ruta |
+| `PATCH` | `/api/distribution/routes/{id}/cancel` | Cancelar ruta |
+
 ---
 
 ## Seguridad
@@ -313,15 +386,22 @@ backend/
 │   │   │       ├── OperatorController.php
 │   │   │       ├── AssignmentController.php
 │   │   │       └── AlertController.php
+│   │   │   └── Distribution/
+│   │   │       ├── OrderController.php
+│   │   │       ├── RouteController.php
+│   │   │       └── EventController.php
 │   │   ├── Middleware/          # AuthSession.php, Profile.php
-│   │   ├── Requests/            # Form Requests por módulo
-│   │   └── Resources/           # *Resource por módulo
-│   └── Models/                  # User, Company, Client, Vehicle, Operator, VehicleAssignment
+│   │   ├── Requests/            # Form Requests por módulo (Transport/, Distribution/)
+│   │   └── Resources/           # *Resource por módulo (Transport/, Distribution/)
+│   └── Models/                  # User, Company, Client, Vehicle, Operator, VehicleAssignment,
+│                                 # DeliveryOrder, DeliveryRoute, DeliveryEvent
 ├── database/
-│   ├── migrations/              # users, companies, clients, vehicles, operators, vehicle_assignments
+│   ├── migrations/              # users, companies, clients, vehicles, operators,
+│   │                            # vehicle_assignments, delivery_routes, delivery_orders,
+│   │                            # delivery_events
 │   └── seeders/                 # DatabaseSeeder — usuario admin inicial
 ├── routes/
-│   └── api.php                  # 38 rutas registradas (19 admin + 19 transport)
+│   └── api.php                  # 56 rutas registradas (19 admin + 19 transport + 18 distribution)
 └── bootstrap/
     └── app.php                  # Registro de middlewares y rutas API
 ```
@@ -331,15 +411,18 @@ backend/
 ```
 frontend/src/
 ├── api/                # auth.js, users.js, companies.js, clients.js,
-│                       # vehicles.js, operators.js, assignments.js
-├── stores/             # auth.js, vehicles.js, operators.js, assignments.js (Pinia)
+│                       # vehicles.js, operators.js, assignments.js,
+│                       # orders.js, routes.js
+├── stores/             # auth.js, vehicles.js, operators.js, assignments.js,
+│                       # orders.js, routes.js (Pinia)
 ├── router/             # index.js — guards requiresAuth / requiresAdmin
 ├── layouts/            # AuthLayout.vue, AppLayout.vue (sidebar con secciones agrupadas)
 ├── pages/
 │   ├── auth/           # Login.vue
 │   ├── Dashboard.vue
 │   ├── admin/          # Companies.vue, Users.vue, Clients.vue
-│   └── transport/      # Vehicles.vue, Operators.vue, Assignments.vue
+│   ├── transport/      # Vehicles.vue, Operators.vue, Assignments.vue
+│   └── distribution/   # Orders.vue, Routes.vue
 └── assets/
     └── admin.css       # Estilos compartidos (BEM-like: btn--primary, field, modal-backdrop…)
 ```
