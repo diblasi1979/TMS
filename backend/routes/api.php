@@ -11,6 +11,10 @@ use App\Http\Controllers\Api\Transport\VehicleController;
 use App\Http\Controllers\Api\Distribution\OrderController;
 use App\Http\Controllers\Api\Distribution\RouteController;
 use App\Http\Controllers\Api\Distribution\EventController;
+use App\Http\Controllers\Api\Planning\TripController;
+use App\Http\Controllers\Api\Planning\MaintenanceController;
+use App\Http\Controllers\Api\Planning\ShiftController;
+use App\Http\Controllers\Api\Planning\AvailabilityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -89,6 +93,43 @@ Route::middleware('auth.session')->group(function () {
             Route::patch('routes/{route}/dispatch', [RouteController::class, 'dispatch'])->name('routes.dispatch');
             Route::patch('routes/{route}/complete', [RouteController::class, 'complete'])->name('routes.complete');
             Route::patch('routes/{route}/cancel',   [RouteController::class, 'cancel'])->name('routes.cancel');
+        });
+
+        // ── Módulo Planificación ────────────────────────────────────────
+        Route::prefix('planning')->name('planning.')->group(function () {
+
+            // Viajes planificados
+            Route::get('trips',                     [TripController::class, 'index'])->name('trips.index');
+            Route::post('trips',                    [TripController::class, 'store'])->name('trips.store');
+            Route::get('trips/{trip}',              [TripController::class, 'show'])->name('trips.show');
+            Route::put('trips/{trip}',              [TripController::class, 'update'])->name('trips.update');
+            Route::delete('trips/{trip}',           [TripController::class, 'destroy'])->name('trips.destroy');
+            Route::patch('trips/{trip}/confirm',    [TripController::class, 'confirm'])->name('trips.confirm');
+            Route::patch('trips/{trip}/start',      [TripController::class, 'start'])->name('trips.start');
+            Route::patch('trips/{trip}/complete',   [TripController::class, 'complete'])->name('trips.complete');
+            Route::patch('trips/{trip}/cancel',     [TripController::class, 'cancel'])->name('trips.cancel');
+
+            // Mantenimiento programado
+            Route::get('maintenance',               [MaintenanceController::class, 'index'])->name('maintenance.index');
+            Route::post('maintenance',              [MaintenanceController::class, 'store'])->name('maintenance.store');
+            Route::get('maintenance/{maintenance}', [MaintenanceController::class, 'show'])->name('maintenance.show');
+            Route::put('maintenance/{maintenance}', [MaintenanceController::class, 'update'])->name('maintenance.update');
+            Route::delete('maintenance/{maintenance}', [MaintenanceController::class, 'destroy'])->name('maintenance.destroy');
+            Route::patch('maintenance/{maintenance}/start',    [MaintenanceController::class, 'start'])->name('maintenance.start');
+            Route::patch('maintenance/{maintenance}/complete', [MaintenanceController::class, 'complete'])->name('maintenance.complete');
+            Route::patch('maintenance/{maintenance}/cancel',   [MaintenanceController::class, 'cancel'])->name('maintenance.cancel');
+
+            // Turnos de operadores
+            Route::get('shifts',               [ShiftController::class, 'index'])->name('shifts.index');
+            Route::post('shifts',              [ShiftController::class, 'store'])->name('shifts.store');
+            Route::get('shifts/{shift}',       [ShiftController::class, 'show'])->name('shifts.show');
+            Route::put('shifts/{shift}',       [ShiftController::class, 'update'])->name('shifts.update');
+            Route::delete('shifts/{shift}',    [ShiftController::class, 'destroy'])->name('shifts.destroy');
+
+            // Disponibilidad y conflictos
+            Route::get('availability/vehicles',  [AvailabilityController::class, 'vehicles'])->name('availability.vehicles');
+            Route::get('availability/operators', [AvailabilityController::class, 'operators'])->name('availability.operators');
+            Route::get('conflicts',              [AvailabilityController::class, 'conflicts'])->name('conflicts');
         });
     });
 });

@@ -41,6 +41,15 @@ const routes = [
           { path: 'routes', name: 'routes', component: () => import('@/pages/distribution/Routes.vue') },
         ],
       },
+      {
+        path: 'planning',
+        meta: { requiresAdmin: true },
+        children: [
+          { path: 'trips',       name: 'trips',       component: () => import('@/pages/planning/Trips.vue') },
+          { path: 'maintenance', name: 'maintenance', component: () => import('@/pages/planning/Maintenance.vue') },
+          { path: 'shifts',      name: 'shifts',      component: () => import('@/pages/planning/Shifts.vue') },
+        ],
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },

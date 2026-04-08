@@ -25,6 +25,9 @@ const navItems = computed(() => {
       { type: 'link',  name: 'orders', label: 'Pedidos', icon: '📦', to: { name: 'orders' }, indent: true },
       { type: 'link',  name: 'routes', label: 'Rutas',   icon: '🗺️', to: { name: 'routes' }, indent: true },
       { type: 'group', label: 'Planificación' },
+      { type: 'link',  name: 'trips',       label: 'Viajes',       icon: '🗓️', to: { name: 'trips' },       indent: true },
+      { type: 'link',  name: 'maintenance', label: 'Mantenimiento',icon: '🔧', to: { name: 'maintenance' }, indent: true },
+      { type: 'link',  name: 'shifts',      label: 'Turnos',       icon: '⏱️', to: { name: 'shifts' },      indent: true },
       { type: 'group', label: 'Seguimiento' },
     )
   }
