@@ -12,9 +12,9 @@ TMS es una plataforma web diseñada para gestionar las operaciones logísticas d
 |--------|--------|-------------|
 | **Administración** | ✅ Implementado | Gestión de empresas, usuarios, clientes y roles |
 | **Transporte** | ✅ Implementado | Flota de vehículos, operadores y asignaciones |
-| **Distribución** | 🔜 Próximamente | Gestión de rutas y puntos de entrega |
-| **Planificación** | 🔜 Próximamente | Programación de viajes y cargas |
-| **Seguimiento** | 🔜 Próximamente | Trazabilidad en tiempo real |
+| **Distribución** | � En diseño | Gestión de rutas y puntos de entrega |
+| **Planificación** | 🚧 En diseño | Programación de viajes y cargas |
+| **Seguimiento** | 🚧 En diseño | Trazabilidad en tiempo real |
 
 ---
 
@@ -34,7 +34,7 @@ La comunicación entre capas se realiza exclusivamente mediante la API REST usan
 
 ### Vehículos (`/api/transport/vehicles`)
 
-Gestión de la flota de vehículos de la empresa. Campos principales: placa, marca, modelo, año, tipo (`sedan`, `suv`, `pickup`, `van`, `truck`, `trailer`, `bus`, `motorcycle`, `other`), combustible (`gasoline`, `diesel`, `electric`, `hybrid`, `gas`), vencimientos de seguro, revisión técnica y permiso de circulación.
+Gestión de la flota de vehículos de la empresa. Campos principales: placa, marca, modelo, año, tipo (`truck`, `van`, `pickup`, `semi`, `refrigerated`, `tanker`, `minibus`), combustible (`diesel`, `gasoline`, `electric`, `gas`), capacidad de carga (kg y m³), kilometraje, vencimientos de seguro, revisión técnica y permiso de circulación.
 
 **Estados y transiciones permitidas:**
 
@@ -50,7 +50,7 @@ Gestión de la flota de vehículos de la empresa. Campos principales: placa, mar
 
 ### Operadores (`/api/transport/operators`)
 
-Conductores y operadores de la empresa. Campos principales: nombre, DNI/RUT, teléfono, email, número y clase de licencia (`A1`, `A2`, `B`, `C`, `D`, `E`), vencimiento de licencia.
+Conductores y operadores de la empresa. Campos principales: nombre, número de documento (`document_number`), teléfono, email, dirección, número y clase de licencia (`A1`, `A2`, `B`, `C`, `D`, `E`), vencimiento de licencia, contacto de emergencia y teléfono de emergencia.
 
 **Estados y transiciones permitidas:**
 
@@ -183,6 +183,20 @@ Abrir **http://localhost:5173** en el navegador.
 | Rol | `admin` |
 
 > ⚠️ Cambiar estas credenciales antes de cualquier despliegue en producción.
+
+---
+
+## Navegación del sistema
+
+El sidebar de la aplicación está organizado en secciones agrupadas:
+
+| Sección | Ítems disponibles | Estado |
+|---------|-------------------|--------|
+| **Administración** | Empresas · Usuarios · Clientes | ✅ Activo |
+| **Transporte** | Flota · Operadores · Asignaciones | ✅ Activo |
+| **Distribución** | — | 🚧 En diseño |
+| **Planificación** | — | 🚧 En diseño |
+| **Seguimiento** | — | 🚧 En diseño |
 
 ---
 
@@ -320,12 +334,12 @@ frontend/src/
 │                       # vehicles.js, operators.js, assignments.js
 ├── stores/             # auth.js, vehicles.js, operators.js, assignments.js (Pinia)
 ├── router/             # index.js — guards requiresAuth / requiresAdmin
-├── layouts/            # AuthLayout.vue, AppLayout.vue (sidebar)
+├── layouts/            # AuthLayout.vue, AppLayout.vue (sidebar con secciones agrupadas)
 ├── pages/
 │   ├── auth/           # Login.vue
 │   ├── Dashboard.vue
 │   ├── admin/          # Companies.vue, Users.vue, Clients.vue
 │   └── transport/      # Vehicles.vue, Operators.vue, Assignments.vue
 └── assets/
-    └── admin.css       # Estilos compartidos
+    └── admin.css       # Estilos compartidos (BEM-like: btn--primary, field, modal-backdrop…)
 ```
