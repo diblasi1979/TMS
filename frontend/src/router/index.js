@@ -24,6 +24,15 @@ const routes = [
           { path: 'clients',   name: 'clients',   component: () => import('@/pages/admin/Clients.vue') },
         ],
       },
+      {
+        path: 'transport',
+        meta: { requiresAdmin: true },
+        children: [
+          { path: 'vehicles',    name: 'vehicles',    component: () => import('@/pages/transport/Vehicles.vue') },
+          { path: 'operators',   name: 'operators',   component: () => import('@/pages/transport/Operators.vue') },
+          { path: 'assignments', name: 'assignments', component: () => import('@/pages/transport/Assignments.vue') },
+        ],
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },

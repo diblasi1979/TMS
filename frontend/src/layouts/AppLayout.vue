@@ -13,9 +13,12 @@ const navItems = computed(() => {
   ]
   if (auth.isAdmin) {
     items.push(
-      { name: 'companies', label: 'Empresas',  icon: '🏢', to: { name: 'companies' } },
-      { name: 'users',     label: 'Usuarios',  icon: '👥', to: { name: 'users' } },
-      { name: 'clients',   label: 'Clientes',  icon: '🤝', to: { name: 'clients' } },
+      { name: 'companies',   label: 'Empresas',     icon: '🏢', to: { name: 'companies' } },
+      { name: 'users',       label: 'Usuarios',     icon: '👥', to: { name: 'users' } },
+      { name: 'clients',     label: 'Clientes',     icon: '🤝', to: { name: 'clients' } },
+      { name: 'vehicles',    label: 'Flota',        icon: '🚛', to: { name: 'vehicles' } },
+      { name: 'operators',   label: 'Operadores',   icon: '👷', to: { name: 'operators' } },
+      { name: 'assignments', label: 'Asignaciones', icon: '🔗', to: { name: 'assignments' } },
     )
   }
   return items
