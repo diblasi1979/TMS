@@ -70,12 +70,33 @@ function openEdit(v) {
   showModal.value = true
 }
 
+function buildPayload() {
+  const raw = { ...form }
+  delete raw.id
+
+  // Castear enteros obligatorios
+  raw.year = raw.year !== '' ? parseInt(raw.year, 10) : null
+
+  // Castear enteros opcionales: vacío → null
+  raw.payload_kg        = raw.payload_kg        !== '' ? parseInt(raw.payload_kg, 10)        : null
+  raw.current_mileage   = raw.current_mileage   !== '' ? parseInt(raw.current_mileage, 10)   : null
+
+  // Castear decimal opcional: vacío → null
+  raw.volume_m3 = raw.volume_m3 !== '' ? parseFloat(raw.volume_m3) : null
+
+  // Vaciar strings opcionales → null
+  ;['color', 'notes', 'company_id',
+    'insurance_expiry', 'technical_review_expiry', 'circulation_permit_expiry',
+  ].forEach(k => { if (raw[k] === '') raw[k] = null })
+
+  return raw
+}
+
 async function save() {
   saving.value = true
   error.value  = ''
   try {
-    const payload = { ...form }
-    delete payload.id
+    const payload = buildPayload()
     if (editMode.value) {
       await store.editVehicle(form.id, payload)
     } else {
@@ -83,7 +104,10 @@ async function save() {
     }
     showModal.value = false
   } catch (e) {
-    error.value = e.response?.data?.message ?? 'Error al guardar'
+    const errors = e.response?.data?.errors
+    error.value = errors
+      ? Object.values(errors).flat().join(' ')
+      : (e.response?.data?.message ?? 'Error al guardar')
   } finally {
     saving.value = false
   }
