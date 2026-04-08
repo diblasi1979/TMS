@@ -1,0 +1,44 @@
+# ── Dependencias ─────────────────────────────────────────────
+/backend/vendor/
+/frontend/node_modules/
+
+# ── Build frontend ────────────────────────────────────────────
+/frontend/dist/
+/frontend/.vite/
+
+# ── Build/cache Laravel ───────────────────────────────────────
+/backend/bootstrap/cache/*.php
+/backend/storage/app/
+/backend/storage/framework/cache/
+/backend/storage/framework/sessions/
+/backend/storage/framework/testing/
+/backend/storage/framework/views/
+/backend/storage/logs/
+
+# ── Base de datos SQLite ──────────────────────────────────────
+/backend/database/*.sqlite
+/backend/database/*.sqlite-wal
+/backend/database/*.sqlite-shm
+
+# ── Entorno ───────────────────────────────────────────────────
+/backend/.env
+!/backend/.env.example
+/frontend/.env
+/frontend/.env.local
+
+# ── PHP ───────────────────────────────────────────────────────
+*.php~
+*.swp
+.phpunit.result.cache
+/backend/.phpunit.cache/
+/backend/phpunit.xml.bak
+
+# ── Node & IDE ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# ── Herramientas locales ──────────────────────────────────────
+/.tools/
