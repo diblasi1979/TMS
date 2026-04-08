@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRoutesStore } from '@/stores/routes.js'
+import { getRoute } from '@/api/routes.js'
 import { getOrders } from '@/api/orders.js'
 import { getVehicles } from '@/api/vehicles.js'
 import { getOperators } from '@/api/operators.js'
@@ -13,8 +14,10 @@ const editMode      = ref(false)
 const saving        = ref(false)
 const actioning     = ref(false)
 const error         = ref('')
-const selectedRoute = ref(null)
-const pendingOrders = ref([])
+const selectedRoute   = ref(null)
+const pendingOrders   = ref([])
+const selectedOrderId = ref('')
+const detailLoading   = ref(false)
 const vehicles      = ref([])
 const operators     = ref([])
 const availableTrips = ref([])
@@ -75,9 +78,47 @@ function openEdit(route) {
 }
 
 async function openDetail(route) {
-  const { data } = await import('@/api/routes.js').then(m => m.getRoute(route.id))
-  selectedRoute.value = data.data
+  detailLoading.value = true
   showDetail.value = true
+  selectedRoute.value = null
+  pendingOrders.value = []
+  selectedOrderId.value = ''
+  try {
+    const [routeRes, ordersRes] = await Promise.all([
+      getRoute(route.id),
+      getOrders({ status: 'pending', per_page: 200 }),
+    ])
+    selectedRoute.value = routeRes.data.data
+    pendingOrders.value = ordersRes.data.data ?? []
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+async function addOrder() {
+  if (!selectedOrderId.value) return
+  const orderId = parseInt(selectedOrderId.value)
+  try {
+    await store.addOrder(selectedRoute.value.id, orderId)
+    const { data } = await getRoute(selectedRoute.value.id)
+    selectedRoute.value = data.data
+    pendingOrders.value = pendingOrders.value.filter(o => o.id !== orderId)
+    selectedOrderId.value = ''
+  } catch (e) {
+    alert(e.response?.data?.message ?? 'No se pudo agregar el pedido')
+  }
+}
+
+async function removeOrder(order) {
+  if (!confirm(`¿Quitar el pedido "${order.reference_number}" de esta ruta?`)) return
+  try {
+    await store.removeOrder(selectedRoute.value.id, order.id)
+    const { data } = await getRoute(selectedRoute.value.id)
+    selectedRoute.value = data.data
+    pendingOrders.value.push(order)
+  } catch (e) {
+    alert(e.response?.data?.message ?? 'No se pudo quitar el pedido')
+  }
 }
 
 function buildPayload() {
@@ -349,10 +390,11 @@ onMounted(async () => {
     <div v-if="showDetail && selectedRoute" class="modal-backdrop" @click.self="showDetail = false">
       <div class="modal modal--wide">
         <div class="modal-header">
-          <h3>{{ selectedRoute.name }}</h3>
+          <h3>{{ selectedRoute?.name ?? '…' }}</h3>
           <button class="modal-close" @click="showDetail = false">✕</button>
         </div>
-        <div class="route-detail">
+        <div v-if="detailLoading" class="loading-text" style="padding:1.5rem">Cargando…</div>
+        <div v-else-if="selectedRoute" class="route-detail">
           <div class="route-meta">
             <span><strong>Fecha:</strong> {{ selectedRoute.planned_date }}</span>
             <span><strong>Estado:</strong>
@@ -368,13 +410,32 @@ onMounted(async () => {
             <span v-if="selectedRoute.operator"><strong>Operador:</strong> {{ selectedRoute.operator.name }}</span>
           </div>
           <h4>Pedidos ({{ selectedRoute.orders?.length ?? 0 }})</h4>
+
+          <!-- Agregar pedido (solo en rutas editables) -->
+          <div v-if="['draft','planned'].includes(selectedRoute.status)" class="add-order-row">
+            <select v-model="selectedOrderId" class="add-order-select">
+              <option value="">— Seleccionar pedido pendiente —</option>
+              <option v-for="o in pendingOrders" :key="o.id" :value="o.id">
+                {{ o.reference_number }} — {{ o.delivery_address }}
+              </option>
+            </select>
+            <button
+              class="btn btn--primary btn--sm"
+              :disabled="!selectedOrderId"
+              @click="addOrder"
+            >+ Agregar</button>
+          </div>
+
           <table class="data-table">
             <thead>
-              <tr><th>#</th><th>Referencia</th><th>Cliente</th><th>Dirección</th><th>Estado</th></tr>
+              <tr>
+                <th>#</th><th>Referencia</th><th>Cliente</th><th>Dirección</th><th>Estado</th>
+                <th v-if="['draft','planned'].includes(selectedRoute.status)">Acción</th>
+              </tr>
             </thead>
             <tbody>
               <tr v-if="!selectedRoute.orders?.length">
-                <td colspan="5" class="empty-row">Sin pedidos asignados</td>
+                <td :colspan="['draft','planned'].includes(selectedRoute.status) ? 6 : 5" class="empty-row">Sin pedidos asignados</td>
               </tr>
               <tr v-for="order in selectedRoute.orders" :key="order.id">
                 <td>{{ order.sort_order }}</td>
@@ -385,6 +446,9 @@ onMounted(async () => {
                   <span class="badge" :style="{ background: STATUS_COLORS[order.status] }">
                     {{ STATUS_LABELS[order.status] ?? order.status }}
                   </span>
+                </td>
+                <td v-if="['draft','planned'].includes(selectedRoute.status)">
+                  <button class="btn btn--sm btn--danger" @click="removeOrder(order)">Quitar</button>
                 </td>
               </tr>
             </tbody>
@@ -404,7 +468,9 @@ onMounted(async () => {
 .filters select, .filters input[type="date"] {
   padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;
 }
-.modal--wide { max-width: 860px; width: 95%; }
+.modal--wide { max-width: 920px; width: 95%; }
+.add-order-row { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
+.add-order-select { flex: 1; padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; }
 .route-detail { padding: 0 0 1rem; }
 .route-meta {
   display: flex; flex-wrap: wrap; gap: 1.5rem;
