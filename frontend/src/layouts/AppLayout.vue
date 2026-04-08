@@ -9,16 +9,17 @@ const route  = useRoute()
 
 const navItems = computed(() => {
   const items = [
-    { name: 'dashboard',  label: 'Dashboard',  icon: '📊', to: { name: 'dashboard' } },
+    { type: 'link', name: 'dashboard',  label: 'Dashboard', icon: '📊', to: { name: 'dashboard' } },
   ]
   if (auth.isAdmin) {
     items.push(
-      { name: 'companies',   label: 'Empresas',     icon: '🏢', to: { name: 'companies' } },
-      { name: 'users',       label: 'Usuarios',     icon: '👥', to: { name: 'users' } },
-      { name: 'clients',     label: 'Clientes',     icon: '🤝', to: { name: 'clients' } },
-      { name: 'vehicles',    label: 'Flota',        icon: '🚛', to: { name: 'vehicles' } },
-      { name: 'operators',   label: 'Operadores',   icon: '👷', to: { name: 'operators' } },
-      { name: 'assignments', label: 'Asignaciones', icon: '🔗', to: { name: 'assignments' } },
+      { type: 'link',  name: 'companies',   label: 'Empresas',     icon: '🏢', to: { name: 'companies' } },
+      { type: 'link',  name: 'users',       label: 'Usuarios',     icon: '👥', to: { name: 'users' } },
+      { type: 'link',  name: 'clients',     label: 'Clientes',     icon: '🤝', to: { name: 'clients' } },
+      { type: 'group', label: 'Transporte' },
+      { type: 'link',  name: 'vehicles',    label: 'Flota',        icon: '🚛', to: { name: 'vehicles' },    indent: true },
+      { type: 'link',  name: 'operators',   label: 'Operadores',   icon: '👷', to: { name: 'operators' },   indent: true },
+      { type: 'link',  name: 'assignments', label: 'Asignaciones', icon: '🔗', to: { name: 'assignments' }, indent: true },
     )
   }
   return items
@@ -44,16 +45,18 @@ function isActive(name) {
       </div>
 
       <nav class="sidebar-nav">
-        <RouterLink
-          v-for="item in navItems"
-          :key="item.name"
-          :to="item.to"
-          class="nav-item"
-          :class="{ active: isActive(item.name) }"
-        >
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span>{{ item.label }}</span>
-        </RouterLink>
+        <template v-for="item in navItems" :key="item.name ?? item.label">
+          <div v-if="item.type === 'group'" class="nav-group-label">{{ item.label }}</div>
+          <RouterLink
+            v-else
+            :to="item.to"
+            class="nav-item"
+            :class="{ active: isActive(item.name), 'nav-item--indented': item.indent }"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span>{{ item.label }}</span>
+          </RouterLink>
+        </template>
       </nav>
 
       <div class="sidebar-footer">
@@ -144,6 +147,20 @@ function isActive(name) {
   font-size: 1rem;
   width: 1.2rem;
   text-align: center;
+}
+
+.nav-group-label {
+  padding: 0.9rem 1.5rem 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b8cae;
+  user-select: none;
+}
+
+.nav-item--indented {
+  padding-left: 2.25rem;
 }
 
 /* ─── Footer ─── */
