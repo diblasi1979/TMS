@@ -11,8 +11,8 @@ TMS es una plataforma web diseñada para gestionar las operaciones logísticas d
 | Módulo | Estado | Descripción |
 |--------|--------|-------------|
 | **Administración** | ✅ Implementado | Gestión de empresas, usuarios, clientes y roles |
+| **Transporte** | ✅ Implementado | Flota de vehículos, operadores y asignaciones |
 | **Distribución** | 🔜 Próximamente | Gestión de rutas y puntos de entrega |
-| **Transporte** | 🔜 Próximamente | Flota de vehículos y operadores |
 | **Planificación** | 🔜 Próximamente | Programación de viajes y cargas |
 | **Seguimiento** | 🔜 Próximamente | Trazabilidad en tiempo real |
 
@@ -27,6 +27,57 @@ TMS/
 ```
 
 La comunicación entre capas se realiza exclusivamente mediante la API REST usando tokens **Bearer (Sanctum)**. El frontend nunca accede directamente a la base de datos.
+
+---
+
+## Módulo: Transporte (implementado)
+
+### Vehículos (`/api/transport/vehicles`)
+
+Gestión de la flota de vehículos de la empresa. Campos principales: placa, marca, modelo, año, tipo (`sedan`, `suv`, `pickup`, `van`, `truck`, `trailer`, `bus`, `motorcycle`, `other`), combustible (`gasoline`, `diesel`, `electric`, `hybrid`, `gas`), vencimientos de seguro, revisión técnica y permiso de circulación.
+
+**Estados y transiciones permitidas:**
+
+| Estado | Puede pasar a |
+|--------|---------------|
+| `available` | `on_route`, `maintenance`, `inactive` |
+| `on_route` | `available` |
+| `maintenance` | `available`, `inactive` |
+| `inactive` | — |
+
+- Un vehículo no puede eliminarse si tiene una asignación activa.
+- El endpoint `GET /api/transport/vehicles/expiring` devuelve los documentos que vencen en los próximos 30 días.
+
+### Operadores (`/api/transport/operators`)
+
+Conductores y operadores de la empresa. Campos principales: nombre, DNI/RUT, teléfono, email, número y clase de licencia (`A1`, `A2`, `B`, `C`, `D`, `E`), vencimiento de licencia.
+
+**Estados y transiciones permitidas:**
+
+| Estado | Puede pasar a |
+|--------|---------------|
+| `available` | `on_duty`, `off_duty`, `inactive` |
+| `on_duty` | `available`, `off_duty` |
+| `off_duty` | `available`, `inactive` |
+| `inactive` | — |
+
+- El endpoint `GET /api/transport/operators/expiring-licenses` devuelve los operadores con licencia por vencer en 30 días.
+
+### Asignaciones (`/api/transport/assignments`)
+
+Vincula un vehículo con un operador para un servicio. Reglas de negocio:
+- El vehículo debe estar en estado `available`.
+- El operador debe estar en estado `available`.
+- No puede existir una asignación activa previa para el mismo vehículo u operador.
+- Al confirmar la asignación, el vehículo pasa a `on_route` y el operador a `on_duty`.
+- Al liberar (`PATCH /release`), ambos retornan a `available` y se registra `released_at`.
+
+### Alertas (`GET /api/transport/alerts`)
+
+Endpoint unificado que retorna:
+- Vehículos con documentos por vencer en ≤ 30 días (seguro, revisión técnica, permiso de circulación).
+- Operadores con licencia por vencer en ≤ 30 días.
+- Contador total de alertas.
 
 ---
 
@@ -181,6 +232,45 @@ Authorization: Bearer <token>
 | `PUT` | `/api/clients/{id}` | Actualizar |
 | `DELETE` | `/api/clients/{id}` | Eliminar |
 
+### Vehículos (solo `admin`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/transport/vehicles` | Listar (filtros: status, type) |
+| `POST` | `/api/transport/vehicles` | Crear |
+| `GET` | `/api/transport/vehicles/{id}` | Ver detalle |
+| `PUT` | `/api/transport/vehicles/{id}` | Actualizar |
+| `DELETE` | `/api/transport/vehicles/{id}` | Eliminar |
+| `PATCH` | `/api/transport/vehicles/{id}/status` | Cambiar estado |
+| `GET` | `/api/transport/vehicles/expiring` | Documentos por vencer |
+
+### Operadores (solo `admin`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/transport/operators` | Listar (filtros: status) |
+| `POST` | `/api/transport/operators` | Crear |
+| `GET` | `/api/transport/operators/{id}` | Ver detalle |
+| `PUT` | `/api/transport/operators/{id}` | Actualizar |
+| `DELETE` | `/api/transport/operators/{id}` | Eliminar |
+| `PATCH` | `/api/transport/operators/{id}/status` | Cambiar estado |
+| `GET` | `/api/transport/operators/expiring-licenses` | Licencias por vencer |
+
+### Asignaciones (solo `admin`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/transport/assignments` | Historial paginado |
+| `GET` | `/api/transport/assignments/active` | Asignaciones activas |
+| `POST` | `/api/transport/assignments` | Crear asignación |
+| `PATCH` | `/api/transport/assignments/{id}/release` | Liberar asignación |
+
+### Alertas (solo `admin`)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/api/transport/alerts` | Alertas unificadas de documentos y licencias |
+
 ---
 
 ## Seguridad
@@ -199,16 +289,25 @@ Authorization: Bearer <token>
 backend/
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/Api/     # AuthController, UserController, CompanyController, ClientController
+│   │   ├── Controllers/Api/
+│   │   │   ├── AuthController.php
+│   │   │   ├── UserController.php
+│   │   │   ├── CompanyController.php
+│   │   │   ├── ClientController.php
+│   │   │   └── Transport/
+│   │   │       ├── VehicleController.php
+│   │   │       ├── OperatorController.php
+│   │   │       ├── AssignmentController.php
+│   │   │       └── AlertController.php
 │   │   ├── Middleware/          # AuthSession.php, Profile.php
 │   │   ├── Requests/            # Form Requests por módulo
-│   │   └── Resources/           # UserResource, CompanyResource, ClientResource
-│   └── Models/                  # User, Company, Client
+│   │   └── Resources/           # *Resource por módulo
+│   └── Models/                  # User, Company, Client, Vehicle, Operator, VehicleAssignment
 ├── database/
-│   ├── migrations/              # Tablas: users, companies, clients, personal_access_tokens
+│   ├── migrations/              # users, companies, clients, vehicles, operators, vehicle_assignments
 │   └── seeders/                 # DatabaseSeeder — usuario admin inicial
 ├── routes/
-│   └── api.php                  # 19 rutas registradas
+│   └── api.php                  # 38 rutas registradas (19 admin + 19 transport)
 └── bootstrap/
     └── app.php                  # Registro de middlewares y rutas API
 ```
@@ -217,14 +316,16 @@ backend/
 
 ```
 frontend/src/
-├── api/                # Clientes HTTP: auth.js, users.js, companies.js, clients.js
-├── stores/             # auth.js (Pinia)
+├── api/                # auth.js, users.js, companies.js, clients.js,
+│                       # vehicles.js, operators.js, assignments.js
+├── stores/             # auth.js, vehicles.js, operators.js, assignments.js (Pinia)
 ├── router/             # index.js — guards requiresAuth / requiresAdmin
 ├── layouts/            # AuthLayout.vue, AppLayout.vue (sidebar)
 ├── pages/
 │   ├── auth/           # Login.vue
 │   ├── Dashboard.vue
-│   └── admin/          # Companies.vue, Users.vue, Clients.vue
+│   ├── admin/          # Companies.vue, Users.vue, Clients.vue
+│   └── transport/      # Vehicles.vue, Operators.vue, Assignments.vue
 └── assets/
-    └── admin.css       # Estilos compartidos para vistas administrativas
+    └── admin.css       # Estilos compartidos
 ```
