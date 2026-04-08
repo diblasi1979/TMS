@@ -70,7 +70,9 @@ function isActive(name) {
 
     <!-- Main content -->
     <main class="main-content">
-      <RouterView />
+      <div class="content-wrap">
+        <RouterView />
+      </div>
     </main>
   </div>
 </template>
@@ -205,6 +207,12 @@ function isActive(name) {
 .main-content {
   flex: 1;
   overflow-x: hidden;
+  overflow-y: auto;
   padding: 2rem;
+}
+
+.content-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
 }
 </style>
