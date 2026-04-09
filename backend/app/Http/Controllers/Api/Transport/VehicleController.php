@@ -20,9 +20,10 @@ class VehicleController extends Controller
             ->when($request->status,     fn ($q) => $q->where('status', $request->status))
             ->when($request->type,       fn ($q) => $q->where('type', $request->type))
             ->when($request->company_id, fn ($q) => $q->where('company_id', $request->company_id))
+            ->when($request->filled('is_active'), fn ($q) => $q->where('is_active', (bool) $request->is_active))
             ->latest();
 
-        return VehicleResource::collection($query->paginate(15));
+        return VehicleResource::collection($query->paginate((int) ($request->per_page ?? 15)));
     }
 
     public function store(StoreVehicleRequest $request): JsonResponse

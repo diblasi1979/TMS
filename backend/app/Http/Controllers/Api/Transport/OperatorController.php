@@ -19,9 +19,10 @@ class OperatorController extends Controller
         $query = Operator::with(['company', 'activeAssignment.vehicle'])
             ->when($request->status,     fn ($q) => $q->where('status', $request->status))
             ->when($request->company_id, fn ($q) => $q->where('company_id', $request->company_id))
+            ->when($request->filled('is_active'), fn ($q) => $q->where('is_active', (bool) $request->is_active))
             ->latest();
 
-        return OperatorResource::collection($query->paginate(15));
+        return OperatorResource::collection($query->paginate((int) ($request->per_page ?? 15)));
     }
 
     public function store(StoreOperatorRequest $request): JsonResponse

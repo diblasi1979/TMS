@@ -209,8 +209,8 @@ function applyFilters() {
 onMounted(async () => {
   await store.fetchRoutes()
   const [vo, oo, to] = await Promise.all([
-    getVehicles({ status: 'available' }),
-    getOperators({ status: 'available' }),
+    getVehicles({ is_active: 1, per_page: 200 }),
+    getOperators({ is_active: 1, per_page: 200 }),
     getTrips({ status: 'confirmed,draft', per_page: 100 }),
   ])
   vehicles.value      = vo.data.data ?? []
