@@ -99,7 +99,7 @@ async function addOrder() {
   if (!selectedOrderId.value) return
   const orderId = parseInt(selectedOrderId.value)
   try {
-    await store.addOrder(selectedRoute.value.id, orderId)
+    await store.attachOrder(selectedRoute.value.id, orderId)
     const { data } = await getRoute(selectedRoute.value.id)
     selectedRoute.value = data.data
     pendingOrders.value = pendingOrders.value.filter(o => o.id !== orderId)
@@ -112,7 +112,7 @@ async function addOrder() {
 async function removeOrder(order) {
   if (!confirm(`¿Quitar el pedido "${order.reference_number}" de esta ruta?`)) return
   try {
-    await store.removeOrder(selectedRoute.value.id, order.id)
+    await store.detachOrder(selectedRoute.value.id, order.id)
     const { data } = await getRoute(selectedRoute.value.id)
     selectedRoute.value = data.data
     pendingOrders.value.push(order)
