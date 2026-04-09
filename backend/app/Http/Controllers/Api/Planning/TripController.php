@@ -26,7 +26,10 @@ class TripController extends Controller
             ->where('company_id', Auth::user()->company_id);
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $statuses = explode(',', $request->status);
+            count($statuses) > 1
+                ? $query->whereIn('status', $statuses)
+                : $query->where('status', $statuses[0]);
         }
         if ($request->filled('priority')) {
             $query->where('priority', $request->priority);
@@ -44,7 +47,7 @@ class TripController extends Controller
             $query->where('scheduled_departure', '<=', $request->to);
         }
 
-        return TripResource::collection($query->latest('scheduled_departure')->paginate(20));
+        return TripResource::collection($query->latest('scheduled_departure')->paginate((int) ($request->per_page ?? 20)));
     }
 
     public function store(StoreTripRequest $request): JsonResponse
