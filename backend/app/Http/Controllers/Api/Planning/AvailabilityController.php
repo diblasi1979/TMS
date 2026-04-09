@@ -39,7 +39,7 @@ class AvailabilityController extends Controller
             $maintenance = MaintenanceSchedule::where('vehicle_id', $vehicle->id)
                 ->whereIn('status', ['scheduled', 'in_progress'])
                 ->where('scheduled_date', '<=', $to)
-                ->whereRaw("DATE_ADD(scheduled_date, INTERVAL estimated_duration_days DAY) >= ?", [$from])
+                ->whereRaw("DATE(scheduled_date, '+' || estimated_duration_days || ' days') >= ?", [$from])
                 ->first();
 
             if ($maintenance) {
@@ -158,7 +158,7 @@ class AvailabilityController extends Controller
             $maintenance = MaintenanceSchedule::where('vehicle_id', $trip->vehicle_id)
                 ->whereIn('status', ['scheduled', 'in_progress'])
                 ->where('scheduled_date', '<=', $trip->scheduled_arrival->toDateString())
-                ->whereRaw("DATE_ADD(scheduled_date, INTERVAL estimated_duration_days DAY) >= ?", [$trip->scheduled_departure->toDateString()])
+                ->whereRaw("DATE(scheduled_date, '+' || estimated_duration_days || ' days') >= ?", [$trip->scheduled_departure->toDateString()])
                 ->first();
 
             if ($maintenance) {

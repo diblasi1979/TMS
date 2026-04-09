@@ -165,7 +165,7 @@ class TripController extends Controller
         $maintenance = MaintenanceSchedule::where('vehicle_id', $vehicleId)
             ->whereIn('status', ['scheduled', 'in_progress'])
             ->where('scheduled_date', '<=', $to->toDateString())
-            ->whereRaw("DATE_ADD(scheduled_date, INTERVAL estimated_duration_days DAY) >= ?", [$from->toDateString()])
+            ->whereRaw("DATE(scheduled_date, '+' || estimated_duration_days || ' days') >= ?", [$from->toDateString()])
             ->first();
 
         if ($maintenance) {
