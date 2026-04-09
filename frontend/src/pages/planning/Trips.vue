@@ -2,6 +2,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useTripsStore } from '@/stores/trips.js'
 import { getTrip } from '@/api/trips.js'
+import { getVehicles } from '@/api/vehicles.js'
+import { getOperators } from '@/api/operators.js'
 
 const store    = useTripsStore()
 const showModal    = ref(false)
@@ -50,6 +52,8 @@ const form = reactive({
 })
 
 const confirmForm = reactive({ vehicle_id: '', operator_id: '' })
+const vehicles    = ref([])
+const operators   = ref([])
 
 function resetForm() {
   Object.assign(form, {
@@ -141,8 +145,8 @@ async function saveConfirm() {
   error.value  = ''
   try {
     await store.confirm(confirmTarget.value.id, {
-      vehicle_id:  parseInt(confirmForm.vehicle_id),
-      operator_id: parseInt(confirmForm.operator_id),
+      vehicle_id:  Number(confirmForm.vehicle_id),
+      operator_id: Number(confirmForm.operator_id),
     })
     confirmModal.value = false
   } catch (e) {
@@ -197,7 +201,15 @@ function applyFilters() {
   store.fetchTrips(1)
 }
 
-onMounted(() => store.fetchTrips())
+onMounted(async () => {
+  await store.fetchTrips()
+  const [vo, oo] = await Promise.all([
+    getVehicles({ is_active: 1, per_page: 200 }),
+    getOperators({ is_active: 1, per_page: 200 }),
+  ])
+  vehicles.value  = vo.data.data ?? []
+  operators.value = oo.data.data ?? []
+})
 </script>
 
 <template>
@@ -424,12 +436,24 @@ onMounted(() => store.fetchTrips())
           <div v-if="error" class="alert alert--error">{{ error }}</div>
           <div class="form-grid">
             <div class="field">
-              <label>ID Vehículo *</label>
-              <input v-model="confirmForm.vehicle_id" type="number" required min="1" />
+              <label>Vehículo *</label>
+              <select v-model="confirmForm.vehicle_id" required>
+                <option value="">— Seleccionar vehículo —</option>
+                <option v-for="v in vehicles" :key="v.id" :value="v.id">
+                  {{ v.plate }} — {{ v.brand }} {{ v.model }}
+                  <template v-if="v.status !== 'available'"> ({{ v.status }})</template>
+                </option>
+              </select>
             </div>
             <div class="field">
-              <label>ID Operador *</label>
-              <input v-model="confirmForm.operator_id" type="number" required min="1" />
+              <label>Operador *</label>
+              <select v-model="confirmForm.operator_id" required>
+                <option value="">— Seleccionar operador —</option>
+                <option v-for="op in operators" :key="op.id" :value="op.id">
+                  {{ op.name }}
+                  <template v-if="op.status !== 'available'"> ({{ op.status }})</template>
+                </option>
+              </select>
             </div>
           </div>
           <div class="modal-footer">
