@@ -1,0 +1,331 @@
+{
+  "info": {
+    "_postman_id": "4f8f7434-7e3d-4b86-b2b1-8f4b8326d8ef",
+    "name": "TMS API",
+    "description": "Coleccion Postman para todos los servicios de la API TMS. Usa el login de admin seed para capturar automaticamente el bearer token. Credenciales seed: admin@tms.local / password.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000/api" },
+    { "key": "token", "value": "" },
+    { "key": "companyId", "value": "1" },
+    { "key": "userId", "value": "1" },
+    { "key": "clientId", "value": "1" },
+    { "key": "vehicleId", "value": "1" },
+    { "key": "operatorId", "value": "1" },
+    { "key": "assignmentId", "value": "1" },
+    { "key": "orderId", "value": "1" },
+    { "key": "routeId", "value": "1" },
+    { "key": "tripId", "value": "1" },
+    { "key": "maintenanceId", "value": "1" },
+    { "key": "shiftId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let data = {};",
+                  "try { data = pm.response.json(); } catch (e) {}",
+                  "if (data.access_token) {",
+                  "  pm.collectionVariables.set('token', data.access_token);",
+                  "  pm.environment.set('token', data.access_token);",
+                  "}",
+                  "if (data.user && data.user.id) {",
+                  "  pm.collectionVariables.set('userId', String(data.user.id));",
+                  "  pm.environment.set('userId', String(data.user.id));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@tms.local\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autentica y guarda access_token automaticamente en la variable token."
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Logout All",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Administracion",
+      "item": [
+        {
+          "name": "Companies",
+          "item": [
+            {
+              "name": "List Companies",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Accept", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/companies", "host": ["{{baseUrl}}"], "path": ["companies"] }
+              }
+            },
+            {
+              "name": "Create Company",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"TMS Norte\",\n  \"tax_id\": \"TMS-NORTE-001\",\n  \"address\": \"Av. Principal 100\",\n  \"phone\": \"+51 111 222 333\",\n  \"email\": \"contacto@tmsnorte.local\",\n  \"is_active\": true\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/companies", "host": ["{{baseUrl}}"], "path": ["companies"] }
+              }
+            },
+            {
+              "name": "Show Company",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Accept", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["companies", "{{companyId}}"] }
+              }
+            },
+            {
+              "name": "Update Company",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Accept", "value": "application/json" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"TMS Norte Actualizada\",\n  \"phone\": \"+51 444 555 666\",\n  \"is_active\": true\n}" },
+                "url": { "raw": "{{baseUrl}}/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["companies", "{{companyId}}"] }
+              }
+            },
+            {
+              "name": "Delete Company",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "Accept", "value": "application/json" }],
+                "url": { "raw": "{{baseUrl}}/companies/{{companyId}}", "host": ["{{baseUrl}}"], "path": ["companies", "{{companyId}}"] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            { "name": "List Users", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] } } },
+            { "name": "Create User", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Operador Admin\",\n  \"email\": \"operador.admin@tms.local\",\n  \"password\": \"password123\",\n  \"role\": \"user\",\n  \"company_id\": {{companyId}},\n  \"is_active\": true\n}" }, "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] } } },
+            { "name": "Show User", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] } } },
+            { "name": "Update User", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Operador Admin Actualizado\",\n  \"role\": \"user\",\n  \"is_active\": true\n}" }, "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] } } },
+            { "name": "Delete User", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] } } }
+          ]
+        },
+        {
+          "name": "Clients",
+          "item": [
+            { "name": "List Clients", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] } } },
+            { "name": "Create Client", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"company_id\": {{companyId}},\n  \"name\": \"Cliente Demo\",\n  \"email\": \"cliente.demo@correo.local\",\n  \"phone\": \"+51 777 888 999\",\n  \"address\": \"Jr. Comercio 450\",\n  \"is_active\": true\n}" }, "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] } } },
+            { "name": "Show Client", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/clients/{{clientId}}", "host": ["{{baseUrl}}"], "path": ["clients", "{{clientId}}"] } } },
+            { "name": "Update Client", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Cliente Demo Actualizado\",\n  \"phone\": \"+51 000 111 222\",\n  \"is_active\": true\n}" }, "url": { "raw": "{{baseUrl}}/clients/{{clientId}}", "host": ["{{baseUrl}}"], "path": ["clients", "{{clientId}}"] } } },
+            { "name": "Delete Client", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/clients/{{clientId}}", "host": ["{{baseUrl}}"], "path": ["clients", "{{clientId}}"] } } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Transporte",
+      "item": [
+        {
+          "name": "Alerts",
+          "item": [
+            { "name": "Get Alerts", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/alerts", "host": ["{{baseUrl}}"], "path": ["transport", "alerts"] } } }
+          ]
+        },
+        {
+          "name": "Vehicles",
+          "item": [
+            { "name": "List Vehicles", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/vehicles", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles"] } } },
+            { "name": "Create Vehicle", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"company_id\": {{companyId}},\n  \"plate\": \"ABC-123\",\n  \"type\": \"truck\",\n  \"brand\": \"Volvo\",\n  \"model\": \"FH\",\n  \"year\": 2026,\n  \"color\": \"Blanco\",\n  \"payload_kg\": 15000,\n  \"volume_m3\": 55.5,\n  \"fuel_type\": \"diesel\",\n  \"current_mileage\": 1500,\n  \"insurance_expiry\": \"2027-04-10\",\n  \"technical_review_expiry\": \"2027-04-10\",\n  \"circulation_permit_expiry\": \"2027-04-10\",\n  \"notes\": \"Unidad demo\",\n  \"is_active\": true\n}" }, "url": { "raw": "{{baseUrl}}/transport/vehicles", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles"] } } },
+            { "name": "Show Vehicle", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles", "{{vehicleId}}"] } } },
+            { "name": "Update Vehicle", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"color\": \"Azul\",\n  \"current_mileage\": 2500,\n  \"notes\": \"Actualizado desde Postman\"\n}" }, "url": { "raw": "{{baseUrl}}/transport/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles", "{{vehicleId}}"] } } },
+            { "name": "Delete Vehicle", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/vehicles/{{vehicleId}}", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles", "{{vehicleId}}"] } } },
+            { "name": "Update Vehicle Status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"maintenance\"\n}" }, "url": { "raw": "{{baseUrl}}/transport/vehicles/{{vehicleId}}/status", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles", "{{vehicleId}}", "status"] } } },
+            { "name": "Expiring Vehicle Documents", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/vehicles/expiring", "host": ["{{baseUrl}}"], "path": ["transport", "vehicles", "expiring"] } } }
+          ]
+        },
+        {
+          "name": "Operators",
+          "item": [
+            { "name": "List Operators", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/operators", "host": ["{{baseUrl}}"], "path": ["transport", "operators"] } } },
+            { "name": "Create Operator", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"company_id\": {{companyId}},\n  \"name\": \"Carlos Ruiz\",\n  \"document_number\": \"DOC-987654\",\n  \"email\": \"carlos.ruiz@tms.local\",\n  \"phone\": \"+51 333 444 555\",\n  \"address\": \"Av. Central 555\",\n  \"license_number\": \"LIC-2026-001\",\n  \"license_type\": \"A2\",\n  \"license_expiry\": \"2027-10-10\",\n  \"emergency_contact\": \"Ana Ruiz\",\n  \"emergency_phone\": \"+51 666 777 888\",\n  \"notes\": \"Operador demo\",\n  \"is_active\": true\n}" }, "url": { "raw": "{{baseUrl}}/transport/operators", "host": ["{{baseUrl}}"], "path": ["transport", "operators"] } } },
+            { "name": "Show Operator", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["transport", "operators", "{{operatorId}}"] } } },
+            { "name": "Update Operator", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"+51 123 123 123\",\n  \"notes\": \"Telefono actualizado\"\n}" }, "url": { "raw": "{{baseUrl}}/transport/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["transport", "operators", "{{operatorId}}"] } } },
+            { "name": "Delete Operator", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/operators/{{operatorId}}", "host": ["{{baseUrl}}"], "path": ["transport", "operators", "{{operatorId}}"] } } },
+            { "name": "Update Operator Status", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"status\": \"off_duty\"\n}" }, "url": { "raw": "{{baseUrl}}/transport/operators/{{operatorId}}/status", "host": ["{{baseUrl}}"], "path": ["transport", "operators", "{{operatorId}}", "status"] } } },
+            { "name": "Expiring Licenses", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/operators/expiring-licenses", "host": ["{{baseUrl}}"], "path": ["transport", "operators", "expiring-licenses"] } } }
+          ]
+        },
+        {
+          "name": "Assignments",
+          "item": [
+            { "name": "List Assignments", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/assignments", "host": ["{{baseUrl}}"], "path": ["transport", "assignments"] } } },
+            { "name": "List Active Assignments", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/assignments/active", "host": ["{{baseUrl}}"], "path": ["transport", "assignments", "active"] } } },
+            { "name": "Create Assignment", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"vehicle_id\": {{vehicleId}},\n  \"operator_id\": {{operatorId}},\n  \"notes\": \"Asignacion de prueba\"\n}" }, "url": { "raw": "{{baseUrl}}/transport/assignments", "host": ["{{baseUrl}}"], "path": ["transport", "assignments"] } } },
+            { "name": "Release Assignment", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/transport/assignments/{{assignmentId}}/release", "host": ["{{baseUrl}}"], "path": ["transport", "assignments", "{{assignmentId}}", "release"] } } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Distribucion",
+      "item": [
+        {
+          "name": "Orders",
+          "item": [
+            { "name": "List Orders", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/orders", "host": ["{{baseUrl}}"], "path": ["distribution", "orders"] } } },
+            { "name": "Create Order", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"client_id\": {{clientId}},\n  \"reference_number\": \"PED-2026-0001\",\n  \"description\": \"Entrega de repuestos\",\n  \"weight_kg\": 1250.5,\n  \"volume_m3\": 8.4,\n  \"delivery_address\": \"Av. Siempre Viva 123\",\n  \"delivery_lat\": -12.0464,\n  \"delivery_lng\": -77.0428,\n  \"contact_name\": \"Juan Perez\",\n  \"contact_phone\": \"+51 999 888 777\",\n  \"requested_date\": \"2026-04-10\",\n  \"notes\": \"Recibir en almacen principal\"\n}" }, "url": { "raw": "{{baseUrl}}/distribution/orders", "host": ["{{baseUrl}}"], "path": ["distribution", "orders"] } } },
+            { "name": "Export Pending Orders", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"client_id\": {{clientId}},\n  \"requested_date\": \"2026-04-10\"\n}" }, "url": { "raw": "{{baseUrl}}/distribution/orders/export-pending", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "export-pending"] }, "description": "Envia solo pedidos pending no exportados. Guarda payload y respuesta para auditoria y solo marca exportado si la respuesta incluye external_id." } },
+            { "name": "Show Order", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "{{orderId}}"] } } },
+            { "name": "Update Order", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"delivery_address\": \"Av. Siempre Viva 456\",\n  \"contact_phone\": \"+51 101 202 303\",\n  \"notes\": \"Actualizar direccion de entrega\"\n}" }, "url": { "raw": "{{baseUrl}}/distribution/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "{{orderId}}"] } } },
+            { "name": "Delete Order", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "{{orderId}}"] } } },
+            { "name": "Cancel Order", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/orders/{{orderId}}/cancel", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "{{orderId}}", "cancel"] } } }
+          ]
+        },
+        {
+          "name": "Order Events",
+          "item": [
+            { "name": "List Order Events", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/orders/{{orderId}}/events", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "{{orderId}}", "events"] } } },
+            { "name": "Create Order Event", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"event_type\": \"arrived\",\n  \"occurred_at\": \"2026-04-10T14:30:00\",\n  \"lat\": -12.0464,\n  \"lng\": -77.0428,\n  \"notes\": \"Unidad en punto de entrega\"\n}" }, "url": { "raw": "{{baseUrl}}/distribution/orders/{{orderId}}/events", "host": ["{{baseUrl}}"], "path": ["distribution", "orders", "{{orderId}}", "events"] } } }
+          ]
+        },
+        {
+          "name": "Routes",
+          "item": [
+            { "name": "List Routes", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes", "host": ["{{baseUrl}}"], "path": ["distribution", "routes"] } } },
+            { "name": "Create Route", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ruta Centro 01\",\n  \"planned_date\": \"2026-04-11\",\n  \"trip_plan_id\": null,\n  \"vehicle_id\": {{vehicleId}},\n  \"operator_id\": {{operatorId}},\n  \"total_distance_km\": 125.7,\n  \"notes\": \"Ruta de distribucion demo\"\n}" }, "url": { "raw": "{{baseUrl}}/distribution/routes", "host": ["{{baseUrl}}"], "path": ["distribution", "routes"] } } },
+            { "name": "Show Route", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}"] } } },
+            { "name": "Update Route", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ruta Centro 01 Actualizada\",\n  \"total_distance_km\": 130.0,\n  \"notes\": \"Ajuste de kilometraje\"\n}" }, "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}"] } } },
+            { "name": "Delete Route", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}"] } } },
+            { "name": "Add Order To Route", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"order_id\": {{orderId}}\n}" }, "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}/orders", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}", "orders"] } } },
+            { "name": "Remove Order From Route", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}", "orders", "{{orderId}}"] } } },
+            { "name": "Dispatch Route", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}/dispatch", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}", "dispatch"] } } },
+            { "name": "Complete Route", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}/complete", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}", "complete"] } } },
+            { "name": "Cancel Route", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/distribution/routes/{{routeId}}/cancel", "host": ["{{baseUrl}}"], "path": ["distribution", "routes", "{{routeId}}", "cancel"] } } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Planificacion",
+      "item": [
+        {
+          "name": "Trips",
+          "item": [
+            { "name": "List Trips", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/trips", "host": ["{{baseUrl}}"], "path": ["planning", "trips"] } } },
+            { "name": "Create Trip", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"client_id\": {{clientId}},\n  \"trip_number\": \"TRIP-2026-001\",\n  \"origin\": \"Lima\",\n  \"origin_lat\": -12.0464,\n  \"origin_lng\": -77.0428,\n  \"destination\": \"Arequipa\",\n  \"destination_lat\": -16.4090,\n  \"destination_lng\": -71.5375,\n  \"scheduled_departure\": \"2026-04-11 08:00:00\",\n  \"scheduled_arrival\": \"2026-04-12 18:00:00\",\n  \"vehicle_id\": {{vehicleId}},\n  \"operator_id\": {{operatorId}},\n  \"cargo_type\": \"general\",\n  \"cargo_description\": \"Mercaderia general\",\n  \"weight_kg\": 8000,\n  \"volume_m3\": 35.5,\n  \"distance_km\": 1010,\n  \"priority\": \"high\",\n  \"notes\": \"Viaje demo\"\n}" }, "url": { "raw": "{{baseUrl}}/planning/trips", "host": ["{{baseUrl}}"], "path": ["planning", "trips"] } } },
+            { "name": "Show Trip", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}"] } } },
+            { "name": "Update Trip", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"priority\": \"urgent\",\n  \"notes\": \"Cambiar prioridad\"\n}" }, "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}"] } } },
+            { "name": "Delete Trip", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}"] } } },
+            { "name": "Confirm Trip", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"vehicle_id\": {{vehicleId}},\n  \"operator_id\": {{operatorId}}\n}" }, "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}/confirm", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}", "confirm"] } } },
+            { "name": "Start Trip", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}/start", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}", "start"] } } },
+            { "name": "Complete Trip", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}/complete", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}", "complete"] } } },
+            { "name": "Cancel Trip", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/trips/{{tripId}}/cancel", "host": ["{{baseUrl}}"], "path": ["planning", "trips", "{{tripId}}", "cancel"] } } }
+          ]
+        },
+        {
+          "name": "Maintenance",
+          "item": [
+            { "name": "List Maintenance", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/maintenance", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance"] } } },
+            { "name": "Create Maintenance", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"vehicle_id\": {{vehicleId}},\n  \"maintenance_type\": \"preventive\",\n  \"description\": \"Cambio de aceite y filtros\",\n  \"scheduled_date\": \"2026-04-15\",\n  \"estimated_duration_days\": 2,\n  \"workshop\": \"Taller Central\",\n  \"estimated_cost\": 450.75,\n  \"mileage_at_service\": 3000,\n  \"next_service_km\": 13000,\n  \"next_service_date\": \"2026-10-15\",\n  \"notes\": \"Mantenimiento programado\"\n}" }, "url": { "raw": "{{baseUrl}}/planning/maintenance", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance"] } } },
+            { "name": "Show Maintenance", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/maintenance/{{maintenanceId}}", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance", "{{maintenanceId}}"] } } },
+            { "name": "Update Maintenance", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"workshop\": \"Taller Norte\",\n  \"actual_cost\": 500.25,\n  \"notes\": \"Costo actualizado\"\n}" }, "url": { "raw": "{{baseUrl}}/planning/maintenance/{{maintenanceId}}", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance", "{{maintenanceId}}"] } } },
+            { "name": "Delete Maintenance", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/maintenance/{{maintenanceId}}", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance", "{{maintenanceId}}"] } } },
+            { "name": "Start Maintenance", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/maintenance/{{maintenanceId}}/start", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance", "{{maintenanceId}}", "start"] } } },
+            { "name": "Complete Maintenance", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/maintenance/{{maintenanceId}}/complete", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance", "{{maintenanceId}}", "complete"] } } },
+            { "name": "Cancel Maintenance", "request": { "method": "PATCH", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/maintenance/{{maintenanceId}}/cancel", "host": ["{{baseUrl}}"], "path": ["planning", "maintenance", "{{maintenanceId}}", "cancel"] } } }
+          ]
+        },
+        {
+          "name": "Shifts",
+          "item": [
+            { "name": "List Shifts", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/shifts", "host": ["{{baseUrl}}"], "path": ["planning", "shifts"] } } },
+            { "name": "Create Shift", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"operator_id\": {{operatorId}},\n  \"shift_type\": \"work\",\n  \"start_datetime\": \"2026-04-11 06:00:00\",\n  \"end_datetime\": \"2026-04-11 14:00:00\",\n  \"notes\": \"Turno de prueba\"\n}" }, "url": { "raw": "{{baseUrl}}/planning/shifts", "host": ["{{baseUrl}}"], "path": ["planning", "shifts"] } } },
+            { "name": "Show Shift", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/shifts/{{shiftId}}", "host": ["{{baseUrl}}"], "path": ["planning", "shifts", "{{shiftId}}"] } } },
+            { "name": "Update Shift", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"shift_type\": \"standby\",\n  \"notes\": \"Cambio de turno\"\n}" }, "url": { "raw": "{{baseUrl}}/planning/shifts/{{shiftId}}", "host": ["{{baseUrl}}"], "path": ["planning", "shifts", "{{shiftId}}"] } } },
+            { "name": "Delete Shift", "request": { "method": "DELETE", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/shifts/{{shiftId}}", "host": ["{{baseUrl}}"], "path": ["planning", "shifts", "{{shiftId}}"] } } }
+          ]
+        },
+        {
+          "name": "Availability And Conflicts",
+          "item": [
+            { "name": "Available Vehicles", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/availability/vehicles?from=2026-04-11&to=2026-04-12", "host": ["{{baseUrl}}"], "path": ["planning", "availability", "vehicles"], "query": [{ "key": "from", "value": "2026-04-11" }, { "key": "to", "value": "2026-04-12" }] } } },
+            { "name": "Available Operators", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/availability/operators?from=2026-04-11&to=2026-04-12", "host": ["{{baseUrl}}"], "path": ["planning", "availability", "operators"], "query": [{ "key": "from", "value": "2026-04-11" }, { "key": "to", "value": "2026-04-12" }] } } },
+            { "name": "Conflicts", "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/planning/conflicts?from=2026-04-11&to=2026-04-12", "host": ["{{baseUrl}}"], "path": ["planning", "conflicts"], "query": [{ "key": "from", "value": "2026-04-11" }, { "key": "to", "value": "2026-04-12" }] } } }
+          ]
+        }
+      ]
+    }
+  ]
+}

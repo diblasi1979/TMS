@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'route_optimizer' => [
+        'orders_url' => env('ROUTE_OPTIMIZER_ORDERS_URL'),
+        'time_window_start' => env('ROUTE_OPTIMIZER_TIME_WINDOW_START', '09:00'),
+        'time_window_end' => env('ROUTE_OPTIMIZER_TIME_WINDOW_END', '18:00'),
+    ],
+
 ];

@@ -11,7 +11,7 @@ class DeliveryOrder extends Model
 {
     use HasFactory;
 
-    const STATUSES = ['pending', 'scheduled', 'in_transit', 'delivered', 'failed', 'cancelled'];
+    const STATUSES = ['pending', 'sent', 'scheduled', 'in_transit', 'delivered', 'failed', 'cancelled'];
 
     protected $fillable = [
         'company_id',
@@ -30,6 +30,11 @@ class DeliveryOrder extends Model
         'route_id',
         'sort_order',
         'notes',
+        'optimizer_exported_at',
+        'optimizer_external_id',
+        'optimizer_last_payload',
+        'optimizer_last_response',
+        'optimizer_last_error',
     ];
 
     protected $attributes = [
@@ -42,6 +47,9 @@ class DeliveryOrder extends Model
         'delivery_lng'   => 'float',
         'weight_kg'      => 'float',
         'volume_m3'      => 'float',
+        'optimizer_exported_at' => 'datetime',
+        'optimizer_last_payload' => 'array',
+        'optimizer_last_response' => 'array',
     ];
 
     public function company(): BelongsTo
@@ -65,6 +73,7 @@ class DeliveryOrder extends Model
     }
 
     public function isPending(): bool    { return $this->status === 'pending'; }
+    public function isSent(): bool       { return $this->status === 'sent'; }
     public function isScheduled(): bool  { return $this->status === 'scheduled'; }
     public function isInTransit(): bool  { return $this->status === 'in_transit'; }
     public function isDelivered(): bool  { return $this->status === 'delivered'; }
@@ -79,5 +88,10 @@ class DeliveryOrder extends Model
     public function canBeDeleted(): bool
     {
         return in_array($this->status, ['pending', 'cancelled']);
+    }
+
+    public function wasExportedToOptimizer(): bool
+    {
+        return $this->optimizer_exported_at !== null;
     }
 }

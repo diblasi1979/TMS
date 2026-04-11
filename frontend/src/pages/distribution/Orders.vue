@@ -6,11 +6,18 @@ const store = useOrdersStore()
 const showModal = ref(false)
 const editMode  = ref(false)
 const saving    = ref(false)
+const exportError = ref('')
 const error     = ref('')
 
-const STATUSES = ['pending', 'scheduled', 'in_transit', 'delivered', 'failed', 'cancelled']
+const exportFilters = reactive({
+  client_id: '',
+  requested_date: '',
+})
+
+const STATUSES = ['pending', 'sent', 'scheduled', 'in_transit', 'delivered', 'failed', 'cancelled']
 const STATUS_LABELS = {
   pending:    'Pendiente',
+  sent:       'Enviado',
   scheduled:  'Programado',
   in_transit: 'En Camino',
   delivered:  'Entregado',
@@ -19,6 +26,7 @@ const STATUS_LABELS = {
 }
 const STATUS_COLORS = {
   pending:    '#6b7280',
+  sent:       '#0f766e',
   scheduled:  '#2563eb',
   in_transit: '#d97706',
   delivered:  '#16a34a',
@@ -125,6 +133,18 @@ async function remove(order) {
   }
 }
 
+async function exportPendingOrders() {
+  exportError.value = ''
+  try {
+    await store.exportPending({
+      client_id: exportFilters.client_id !== '' ? parseInt(exportFilters.client_id) : '',
+      requested_date: exportFilters.requested_date,
+    })
+  } catch (e) {
+    exportError.value = e.response?.data?.message ?? 'No se pudieron exportar los pedidos pendientes'
+  }
+}
+
 function applyFilters() {
   store.fetchOrders(1)
 }
@@ -136,7 +156,88 @@ onMounted(() => store.fetchOrders())
   <div>
     <div class="page-header">
       <h1>Pedidos de Entrega</h1>
-      <button class="btn btn--primary" @click="openCreate">+ Nuevo Pedido</button>
+      <div class="page-header__actions">
+        <button class="btn btn--outline" @click="store.clearExportResult()" :disabled="!store.exportResult">Limpiar Resultado</button>
+        <button class="btn btn--primary" @click="openCreate">+ Nuevo Pedido</button>
+      </div>
+    </div>
+
+    <div class="card export-panel">
+      <div class="export-panel__header">
+        <div>
+          <h2>Exportar Pedidos Pendientes</h2>
+          <p>Envia al optimizador solo pedidos pendientes no exportados. Requiere coordenadas y external_id en la respuesta.</p>
+        </div>
+        <button class="btn btn--primary" @click="exportPendingOrders" :disabled="store.exporting">
+          {{ store.exporting ? 'Exportando…' : 'Exportar Pendientes' }}
+        </button>
+      </div>
+
+      <div class="export-panel__filters">
+        <div class="field">
+          <label>ID Cliente</label>
+          <input v-model="exportFilters.client_id" type="number" min="1" placeholder="Opcional" />
+        </div>
+        <div class="field">
+          <label>Fecha solicitada</label>
+          <input v-model="exportFilters.requested_date" type="date" />
+        </div>
+      </div>
+
+      <div v-if="exportError" class="alert alert--error export-panel__alert">{{ exportError }}</div>
+
+      <div v-if="store.exportResult" class="export-result">
+        <div class="export-result__summary">
+          <span class="badge badge--blue">Pendientes: {{ store.exportResult.total_pending }}</span>
+          <span class="badge badge--green">Enviados: {{ store.exportResult.sent_count }}</span>
+          <span class="badge badge--red">Fallidos: {{ store.exportResult.failed_count }}</span>
+        </div>
+        <p class="export-result__message">{{ store.exportResult.message }}</p>
+
+        <div v-if="store.exportResult.sent?.length" class="export-result__block">
+          <h3>Enviados</h3>
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>External ID</th>
+                <th>Dirección</th>
+                <th>Notas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in store.exportResult.sent" :key="`sent-${item.order_id}`">
+                <td>{{ item.reference_number }}</td>
+                <td>{{ item.response_body?.external_id ?? item.response_body?.id ?? '—' }}</td>
+                <td>{{ item.payload?.address }}</td>
+                <td>{{ item.payload?.notes || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="store.exportResult.failed?.length" class="export-result__block">
+          <h3>Fallidos</h3>
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Motivo</th>
+                <th>Dirección</th>
+                <th>Estado respuesta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in store.exportResult.failed" :key="`failed-${item.order_id}`">
+                <td>{{ item.reference_number }}</td>
+                <td>{{ item.reason ?? 'Error externo' }}</td>
+                <td>{{ item.payload?.address ?? '—' }}</td>
+                <td>{{ item.response_status ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- Filtros -->
@@ -145,6 +246,7 @@ onMounted(() => store.fetchOrders())
         <option value="">Todos los estados</option>
         <option v-for="s in STATUSES" :key="s" :value="s">{{ STATUS_LABELS[s] }}</option>
       </select>
+      <input v-model="store.filters.client_id" type="number" min="1" @change="applyFilters" placeholder="ID Cliente" />
       <input v-model="store.filters.requested_date" type="date" @change="applyFilters" title="Filtrar por fecha solicitada" />
     </div>
 
@@ -160,12 +262,13 @@ onMounted(() => store.fetchOrders())
             <th>Fecha solicitada</th>
             <th>Estado</th>
             <th>Ruta</th>
+            <th>Exportación</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="!store.orders.length">
-            <td colspan="7" class="empty-row">Sin pedidos registrados</td>
+            <td colspan="8" class="empty-row">Sin pedidos registrados</td>
           </tr>
           <tr v-for="order in store.orders" :key="order.id">
             <td><strong>{{ order.reference_number }}</strong></td>
@@ -178,6 +281,15 @@ onMounted(() => store.fetchOrders())
               </span>
             </td>
             <td>{{ order.route?.name ?? '—' }}</td>
+            <td>
+              <div class="export-status">
+                <span v-if="order.optimizer_external_id" class="badge badge--green">{{ order.optimizer_external_id }}</span>
+                <span v-else-if="order.optimizer_last_error" class="badge badge--red">Falló</span>
+                <span v-else class="badge badge--gray">Pendiente</span>
+                <small v-if="order.optimizer_exported_at" class="export-status__meta">{{ new Date(order.optimizer_exported_at).toLocaleString() }}</small>
+                <small v-else-if="order.optimizer_last_error" class="export-status__meta export-status__meta--error">{{ order.optimizer_last_error }}</small>
+              </div>
+            </td>
             <td class="actions">
               <button
                 v-if="['pending', 'scheduled'].includes(order.status)"
@@ -273,8 +385,77 @@ onMounted(() => store.fetchOrders())
 
 <style scoped>
 @import '@/assets/admin.css';
+.page-header__actions { display: flex; gap: 0.75rem; }
+.export-panel { padding: 1rem; margin-bottom: 1rem; }
+.export-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.export-panel__header h2 {
+  margin: 0 0 0.25rem;
+  color: #1e3a5f;
+  font-size: 1rem;
+}
+.export-panel__header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+.export-panel__filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 220px));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.export-panel__alert { margin-bottom: 0; }
+.export-result {
+  margin-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+.export-result__summary {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.export-result__message {
+  margin: 0 0 1rem;
+  color: #374151;
+}
+.export-result__block + .export-result__block { margin-top: 1rem; }
+.export-result__block h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+.data-table--compact th,
+.data-table--compact td {
+  padding: 0.55rem 0.75rem;
+}
 .filters { display: flex; gap: 1rem; margin-bottom: 1rem; padding: 0.75rem 1rem; }
-.filters select, .filters input[type="date"] {
+.filters select, .filters input[type="date"], .filters input[type="number"] {
   padding: 0.4rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px;
+}
+.export-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.export-status__meta {
+  font-size: 0.72rem;
+  color: #6b7280;
+  max-width: 220px;
+  line-height: 1.3;
+}
+.export-status__meta--error { color: #b91c1c; }
+@media (max-width: 900px) {
+  .export-panel__header { flex-direction: column; }
+  .export-panel__filters { grid-template-columns: 1fr; }
+  .page-header { align-items: flex-start; gap: 0.75rem; }
+  .page-header__actions { width: 100%; justify-content: flex-end; }
 }
 </style>

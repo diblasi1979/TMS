@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import { getOrders, createOrder, updateOrder, deleteOrder, cancelOrder } from '@/api/orders.js'
+import { getOrders, createOrder, updateOrder, deleteOrder, cancelOrder, exportPendingOrders } from '@/api/orders.js'
 
 export const useOrdersStore = defineStore('orders', () => {
   const orders  = ref([])
   const meta    = ref({})
   const loading = ref(false)
+  const exporting = ref(false)
+  const exportResult = ref(null)
   const filters = reactive({ status: '', client_id: '', requested_date: '', route_id: '' })
 
   async function fetchOrders(page = 1) {
@@ -46,5 +48,28 @@ export const useOrdersStore = defineStore('orders', () => {
     return data
   }
 
-  return { orders, meta, loading, filters, fetchOrders, addOrder, editOrder, removeOrder, cancelOrderById }
+  async function exportPending(filtersPayload = {}) {
+    exporting.value = true
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(filtersPayload).filter(([, value]) => value !== '' && value !== null)
+      )
+      const { data } = await exportPendingOrders(payload)
+      exportResult.value = data
+      await fetchOrders(meta.value?.current_page ?? 1)
+      return data
+    } finally {
+      exporting.value = false
+    }
+  }
+
+  function clearExportResult() {
+    exportResult.value = null
+  }
+
+  return {
+    orders, meta, loading, exporting, exportResult, filters,
+    fetchOrders, addOrder, editOrder, removeOrder, cancelOrderById,
+    exportPending, clearExportResult,
+  }
 })

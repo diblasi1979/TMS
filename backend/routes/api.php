@@ -73,6 +73,7 @@ Route::middleware('auth.session')->group(function () {
             // Pedidos
             Route::get('orders',              [OrderController::class, 'index'])->name('orders.index');
             Route::post('orders',             [OrderController::class, 'store'])->name('orders.store');
+            Route::post('orders/export-pending', [OrderController::class, 'exportPending'])->name('orders.export-pending');
             Route::get('orders/{order}',      [OrderController::class, 'show'])->name('orders.show');
             Route::put('orders/{order}',      [OrderController::class, 'update'])->name('orders.update');
             Route::delete('orders/{order}',   [OrderController::class, 'destroy'])->name('orders.destroy');

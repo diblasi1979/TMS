@@ -271,6 +271,100 @@ Abrir **http://localhost:5173** en el navegador.
 
 ---
 
+## Ejecución con Docker
+
+El proyecto incluye un entorno Docker de desarrollo con dos servicios:
+
+- `backend`: Laravel API en `http://localhost:8000`
+- `frontend`: Vue + Vite en `http://localhost:5173`
+
+### Requisitos previos
+
+- Docker Desktop
+- Docker Compose
+
+### Levantar el entorno
+
+```bash
+docker compose up --build
+```
+
+En el primer arranque, el contenedor del backend realiza automáticamente estas tareas:
+
+- crea `backend/.env` a partir de `backend/.env.example` si no existe
+- genera `APP_KEY` si falta
+- crea `backend/database/database.sqlite`
+- ejecuta `php artisan migrate:fresh --seed --force`
+
+En arranques posteriores ejecuta `php artisan migrate --force` para aplicar cambios pendientes sin reinicializar datos.
+
+### Detener el entorno
+
+```bash
+docker compose down
+```
+
+### Reiniciar desde cero
+
+Si quieres reconstruir dependencias e inicializar nuevamente la base de datos:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+### Notas de funcionamiento
+
+- El frontend usa proxy interno hacia el servicio `backend`, por lo que no depende de `localhost` dentro del contenedor.
+- El backend mantiene la base de datos en SQLite para desarrollo.
+- El primer arranque puede tardar más porque instala dependencias de Composer y npm dentro de los volúmenes del contenedor.
+
+---
+
+## Postman
+
+Se incluyeron archivos listos para importar en Postman:
+
+- `postman/TMS.postman_collection.json`
+- `postman/TMS.local.postman_environment.json`
+
+Uso recomendado:
+
+1. Importar ambos archivos en Postman.
+2. Seleccionar el environment `TMS Local`.
+3. Ejecutar la request `Auth / Login` para guardar automáticamente el bearer token.
+4. Ajustar los IDs (`clientId`, `vehicleId`, `operatorId`, etc.) según los datos creados en tu entorno.
+
+---
+
+## Exportación de pedidos pendientes
+
+Endpoint disponible:
+
+- `POST /api/distribution/orders/export-pending`
+
+Comportamiento:
+
+- envía solo pedidos con estado `pending`
+- excluye pedidos ya exportados previamente (`optimizer_exported_at` no nulo)
+- permite filtros opcionales por `client_id` y `requested_date`
+- guarda en base el último payload enviado, la última respuesta recibida y el último error de exportación
+- solo marca un pedido como exportado si el servicio externo responde con `external_id`
+
+Variables de entorno relacionadas:
+
+- `ROUTE_OPTIMIZER_ORDERS_URL`
+- `ROUTE_OPTIMIZER_TIME_WINDOW_START`
+- `ROUTE_OPTIMIZER_TIME_WINDOW_END`
+
+Notas de configuracion:
+
+- `ROUTE_OPTIMIZER_ORDERS_URL` debe apuntar a la URL real del servicio externo
+- si el backend corre en Docker, `localhost` apunta al contenedor del backend, no a tu maquina ni a otro servicio externo
+- si el optimizador corre en tu host Windows, una opcion habitual es usar `http://host.docker.internal:8009/api/orders`
+
+---
+
 ## Credenciales de acceso (seed)
 
 | Campo | Valor |

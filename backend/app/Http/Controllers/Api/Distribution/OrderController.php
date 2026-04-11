@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\Distribution;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Distribution\ExportPendingOrdersRequest;
 use App\Http\Requests\Distribution\StoreOrderRequest;
 use App\Http\Requests\Distribution\UpdateOrderRequest;
 use App\Http\Resources\Distribution\OrderResource;
 use App\Models\DeliveryOrder;
+use App\Services\Distribution\PendingOrderExporter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -79,5 +81,33 @@ class OrderController extends Controller
         }
         $order->update(['status' => 'cancelled', 'route_id' => null, 'sort_order' => null]);
         return response()->json(new OrderResource($order->fresh()->load('client')));
+    }
+
+    public function exportPending(ExportPendingOrdersRequest $request, PendingOrderExporter $exporter): JsonResponse
+    {
+        $ordersQuery = DeliveryOrder::query()
+            ->where('company_id', Auth::user()->company_id)
+            ->where('status', 'pending')
+            ->whereNull('optimizer_exported_at');
+
+        if ($request->filled('client_id')) {
+            $ordersQuery->where('client_id', $request->integer('client_id'));
+        }
+
+        if ($request->filled('requested_date')) {
+            $ordersQuery->whereDate('requested_date', $request->input('requested_date'));
+        }
+
+        $orders = $ordersQuery->orderBy('id')->get();
+
+        $result = $exporter->export($orders);
+
+        return response()->json([
+            'message' => $result['sent_count'] > 0
+                ? 'Pedidos pendientes enviados al servicio externo.'
+                : 'No se enviaron pedidos pendientes al servicio externo.',
+            'filters' => $request->validated(),
+            ...$result,
+        ]);
     }
 }
